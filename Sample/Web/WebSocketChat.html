@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.1.2/css/bulma.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+    <title>chat sample~~~</title>
+</head>
+
+<body>
+    <div id="app" style="padding: 20px;">
+        <input class="input" style="margin:5px;" v-model="uri" placeholder="ws://xxx.xxx.xxx.xxx:xxx/ws"
+            v-bind:disabled="uriInputDisable">
+        <input class="input" style="margin:5px;" v-model="name" placeholder="user name"
+            v-bind:disabled="nameInputDisable">
+        <textarea class="textarea" style="margin:5px;" v-model="message" placeholder="chat message" rows="10"
+            v-bind:disabled="chatTextAreaDisable"></textarea>
+
+        <div style="margin: 20px;">
+            <div class="button is-primary" v-on:click="OnConnect" v-bind:disabled="isConnectButtonDisable">Connect</div>
+            <div class="button is-primary" v-on:click="OnClose" v-bind:disabled="isCloseButtonDisable">Close</div>
+            <div class="button is-primary" v-on:click="OnSend" v-bind:disabled="isSendButtonDisable">Send</div>
+        </div>
+
+        <message-item v-for="item in chatMessages" v-bind:key="item.id" v-bind:chatdata="item">
+    </div>
+
+    </todo-item>
+
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+    <script>
+
+        var socket = null;
+        var messageCount = 1;
+        const encoder = new TextEncoder("utf-8");
+        const decoder = new TextDecoder("utf-8");
+
+        Vue.component('message-item', {
+            props: ['chatdata'],
+            template: `<div class="box">
+                            <strong> {{chatdata.Name}}</strong>
+                            <p> {{chatdata.Message}}</p>
+                        </div > `
+        })
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                message: '',
+                uri: '',
+                name: '',
+
+                isConnectButtonDisable: false,
+                isCloseButtonDisable: true,
+                isSendButtonDisable: true,
+
+                uriInputDisable: false,
+                nameInputDisable: false,
+                chatTextAreaDisable: true,
+
+                chatMessages: [
+                ],
+            },
+            methods: {
+                OnConnect: function () {
+                    if (!this.uri && !this.name) {
+                        return;
+                    }
+                    console.log(this.uri);
+
+                    socket = new WebSocket(this.uri);
+                    socket.binaryType = "arraybuffer"
+
+                    socket.onopen = function (event) {
+                        //名前の送信
+                        console.log("opened connection to ");
+                        console.log(app.uri);
+                        socket.send(encoder.encode(app.name));
+                    };
+
+                    socket.onclose = function (event) {
+                        console.log("closed connection from " + uri);
+                    };
+
+                    socket.onmessage = function (event) {
+                        console.log("on message!!!!!!!!!!!!!!!!!");
+                        console.log(event.data);
+
+                        let jsonContent = JSON.parse(decoder.decode(event.data));
+                        console.log(jsonContent);
+                        jsonContent["id"] = messageCount;
+                        messageCount++;
+                        app.chatMessages.unshift(jsonContent);
+                    };
+
+                    socket.onerror = function (event) {
+                        console.log("error: " + event.data);
+                    };
+
+                    this.isConnectButtonDisable = true;
+                    this.isCloseButtonDisable = false;
+                    this.isSendButtonDisable = false;
+
+                    this.uriInputDisable = true;
+                    this.nameInputDisable = true;
+                    this.chatTextAreaDisable = false;
+                },
+
+                OnClose: function () {
+                    socket.close();
+
+                    this.isConnectButtonDisable = false;
+                    this.isCloseButtonDisable = true;
+                    this.isSendButtonDisable = true;
+
+                    this.uriInputDisable = false;
+                    this.nameInputDisable = false;
+                    this.chatTextAreaDisable = true;
+                },
+
+                OnSend: function () {
+                    console.log("Sending: " + this.message);
+                    socket.send(encoder.encode(this.message));
+                },
+            }
+        })
+    </script>
+</body>
+
+</html>
