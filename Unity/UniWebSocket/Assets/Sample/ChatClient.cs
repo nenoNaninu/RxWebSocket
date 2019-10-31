@@ -45,7 +45,7 @@ namespace UniWebsocket.Sample
             if (_webSocketClient != null)
             {
                 Debug.Log("ChatClient will be closed!!");
-                await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal",true);
+                await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal", true);
             }
         }
 

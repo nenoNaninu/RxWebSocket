@@ -17,6 +17,17 @@ namespace UniWebsocket.Sample
         // Start is called before the first frame update
         async void Start()
         {
+            var webSocketClient = new WebSocketClient(new Uri(""), () => new ClientWebSocket
+            {
+                Options =
+                {
+                    KeepAliveInterval = TimeSpan.FromSeconds(5),
+                }
+            });
+
+            var (l, r) = (1, 2);
+
+            
 //            var url = new Uri("ws://echo.websocket.org");
             var url = new Uri("ws://192.168.0.3:8080/ws");
 
