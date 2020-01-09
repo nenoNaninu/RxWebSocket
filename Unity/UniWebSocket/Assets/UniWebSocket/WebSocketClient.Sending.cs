@@ -94,7 +94,7 @@ namespace UniWebSocket
                 }
 
                 _logger?.Trace(FormatLogMessage($"Sending text thread failed, error: {e.Message}. Creating a new sending thread."));
-                StartBackgroundThreadForSendingText();
+                // StartBackgroundThreadForSendingText();
             }
         }
 
@@ -132,7 +132,7 @@ namespace UniWebSocket
                 }
 
                 _logger?.Trace(FormatLogMessage($"Sending binary thread failed, error: {e.Message}. Creating a new sending thread."));
-                StartBackgroundThreadForSendingBinary();
+                // StartBackgroundThreadForSendingBinary();
             }
         }
 
@@ -154,7 +154,7 @@ namespace UniWebSocket
         {
             using (await _locker.LockAsync())
             {
-                await SendInternal(message);
+                await SendInternal(message).ConfigureAwait(false);
             }
         }
 
@@ -178,7 +178,7 @@ namespace UniWebSocket
         {
             using (await _locker.LockAsync())
             {
-                await SendInternal(message);
+                await SendInternal(message).ConfigureAwait(false);
             }
         }
 

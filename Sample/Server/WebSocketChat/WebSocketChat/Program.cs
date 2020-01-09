@@ -20,7 +20,7 @@ namespace WebSocketChat
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseUrls("http://192.168.0.8:8080");
+                    webBuilder.UseUrls("http://192.168.1.8:8080");
                     webBuilder.UseStartup<Startup>();
                 });
     }

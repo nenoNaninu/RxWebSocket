@@ -12,7 +12,7 @@ namespace UniWebsocket.Sample
 {
     public class ChatClient : IChatClient
     {
-        private WebSocketClient _webSocketClient;
+        private IWebSocketClient _webSocketClient;
         private readonly ILogger _logger;
         private readonly Subject<ChatMessage> _receivedSubject = new Subject<ChatMessage>();
         private readonly Subject<WebSocketCloseStatus> _errorSubject = new Subject<WebSocketCloseStatus>();

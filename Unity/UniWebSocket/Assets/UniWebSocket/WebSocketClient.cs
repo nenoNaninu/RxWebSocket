@@ -9,7 +9,7 @@ using UniWebSocket.Threading;
 
 namespace UniWebSocket
 {
-    public partial class WebSocketClient : IWebsocketClient
+    public partial class WebSocketClient : IWebSocketClient
     {
         private readonly ILogger _logger;
 
