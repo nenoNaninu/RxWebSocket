@@ -151,7 +151,6 @@ namespace UniWebSocket
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
 
-
         /// <summary>
         /// Start listening to the websocket stream on the background thread
         /// </summary>
@@ -192,6 +191,9 @@ namespace UniWebSocket
                 _cancellationAllJobs?.Dispose();
                 _messagesTextToSendQueue?.Dispose();
                 _messagesBinaryToSendQueue?.Dispose();
+                _messageReceivedSubject?.Dispose();
+                _disconnectedSubject?.Dispose();
+                _exceptionSubject?.Dispose();
             }
             catch (Exception e)
             {
@@ -202,7 +204,7 @@ namespace UniWebSocket
             IsRunning = false;
             IsStarted = false;
         }
-        
+
         /// <summary>
         /// Close WebSocket
         /// </summary>

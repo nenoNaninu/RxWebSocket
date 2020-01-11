@@ -42,7 +42,7 @@ namespace WebSocketChat
             app.UseRouting();
 
             app.UseAuthorization();
-
+        
 
             app.UseWebSockets(new WebSocketOptions()
             {
