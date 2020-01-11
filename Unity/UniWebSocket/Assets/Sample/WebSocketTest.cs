@@ -25,15 +25,12 @@ namespace UniWebsocket.Sample
                 }
             });
 
-            var (l, r) = (1, 2);
-
-            
 //            var url = new Uri("ws://echo.websocket.org");
             var url = new Uri("ws://192.168.0.3:8080/ws");
 
             _client = new WebSocketClient(url, new UnityConsoleLogger());
 
-            await _client.Send("いやっほーーーー");
+            _client.Send("いやっほーーーー");
 
             _client.MessageReceived
                 .ObserveOn(Scheduler.MainThread)
@@ -47,7 +44,7 @@ namespace UniWebsocket.Sample
             Task.Run(async () =>
             {
                 await Task.Delay(5000);
-                await _client.Send("Delay Message!!!!!!!!!!!!!!!!");
+                _client.Send("Delay Message!!!!!!!!!!!!!!!!");
             });
 
             await _client.ConnectAndStartListening();

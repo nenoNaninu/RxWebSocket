@@ -78,14 +78,14 @@ namespace UniWebSocket
         /// It inserts the message to the queue and actual sending is done on an other thread
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        Task Send(string message);
+        void Send(string message);
 
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// It inserts the message to the queue and actual sending is done on an other thread
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
-        Task Send(byte[] message);
+        void Send(byte[] message);
 
         /// <summary>
         /// Send message to the websocket channel. 

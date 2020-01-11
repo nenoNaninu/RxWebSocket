@@ -37,7 +37,7 @@ namespace UniWebsocket.Sample
 
 
             await _webSocketClient.ConnectAndStartListening();
-            await _webSocketClient.Send(Encoding.UTF8.GetBytes(name));
+            _webSocketClient.Send(Encoding.UTF8.GetBytes(name));
         }
 
         public async Task Close()
@@ -49,9 +49,10 @@ namespace UniWebsocket.Sample
             }
         }
 
-        public async Task Send(string message)
+        public Task Send(string message)
         {
-            await _webSocketClient.Send(Encoding.UTF8.GetBytes(message));
+            _webSocketClient.Send(Encoding.UTF8.GetBytes(message));
+            return Task.CompletedTask;
         }
 
         public async void Dispose()

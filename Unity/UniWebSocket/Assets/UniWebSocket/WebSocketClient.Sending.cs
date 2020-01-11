@@ -15,12 +15,11 @@ namespace UniWebSocket
         /// It inserts the message to the queue and actual sending is done on an other thread
         /// </summary>
         /// <param name="message">Text message to be sent</param>
-        public Task Send(string message)
+        public void Send(string message)
         {
             Validations.Validations.ValidateInput(message, nameof(message));
 
             _messagesTextToSendQueue.Add(message);
-            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -28,12 +27,10 @@ namespace UniWebSocket
         /// It inserts the message to the queue and actual sending is done on an other thread
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
-        public Task Send(byte[] message)
+        public void Send(byte[] message)
         {
             Validations.Validations.ValidateInput(message, nameof(message));
-
             _messagesBinaryToSendQueue.Add(message);
-            return Task.CompletedTask;
         }
 
         /// <summary>
