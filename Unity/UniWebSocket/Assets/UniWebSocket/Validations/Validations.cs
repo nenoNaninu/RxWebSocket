@@ -7,7 +7,7 @@ namespace UniWebSocket.Validations
     internal static class Validations
     {
          /// <summary>
-        /// It throws <exception cref="WebsocketBadInputException"></exception> if value is null or empty/white spaces
+        /// It throws <exception cref="WebSocketBadInputException"></exception> if value is null or empty/white spaces
         /// </summary>
         /// <param name="value">The value to be validated</param>
         /// <param name="name">Input parameter name</param>
@@ -15,12 +15,12 @@ namespace UniWebSocket.Validations
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new WebsocketBadInputException($"Input string parameter '{name}' is null or empty. Please correct it.");
+                throw new WebSocketBadInputException($"Input string parameter '{name}' is null or empty. Please correct it.");
             }
         }
 
         /// <summary>
-        /// It throws <exception cref="WebsocketBadInputException"></exception> if value is null
+        /// It throws <exception cref="WebSocketBadInputException"></exception> if value is null
         /// </summary>
         /// <param name="value">The value to be validated</param>
         /// <param name="name">Input parameter name</param>
@@ -28,12 +28,12 @@ namespace UniWebSocket.Validations
         {
             if (Equals(value, default(T)))
             {
-                throw new WebsocketBadInputException($"Input parameter '{name}' is null. Please correct it.");
+                throw new WebSocketBadInputException($"Input parameter '{name}' is null. Please correct it.");
             }
         }
 
         /// <summary>
-        /// It throws <exception cref="WebsocketBadInputException"></exception> if collection is null or collection is empty
+        /// It throws <exception cref="WebSocketBadInputException"></exception> if collection is null or collection is empty
         /// </summary>
         /// <param name="collection">The collection to be validated</param>
         /// <param name="name">Input parameter name</param>
@@ -45,12 +45,12 @@ namespace UniWebSocket.Validations
             // ReSharper disable once PossibleMultipleEnumeration
             if (!collection.Any())
             {
-                throw new WebsocketBadInputException($"Input collection '{name}' is empty. Please correct it.");
+                throw new WebSocketBadInputException($"Input collection '{name}' is empty. Please correct it.");
             }
         }
 
         /// <summary>
-        /// It throws <exception cref="WebsocketBadInputException"></exception> if value is not in specified range
+        /// It throws <exception cref="WebSocketBadInputException"></exception> if value is not in specified range
         /// </summary>
         /// <param name="value">The value to be validated</param>
         /// <param name="name">Input parameter name</param>
@@ -60,16 +60,16 @@ namespace UniWebSocket.Validations
         {
             if (value < minValue)
             {
-                throw new WebsocketBadInputException($"Input parameter '{name}' is lower than {minValue}. Please correct it.");
+                throw new WebSocketBadInputException($"Input parameter '{name}' is lower than {minValue}. Please correct it.");
             }
             if (value > maxValue)
             {
-                throw new WebsocketBadInputException($"Input parameter '{name}' is higher than {maxValue}. Please correct it.");
+                throw new WebSocketBadInputException($"Input parameter '{name}' is higher than {maxValue}. Please correct it.");
             }
         }
 
         /// <summary>
-        /// It throws <exception cref="WebsocketBadInputException"></exception> if value is not in specified range
+        /// It throws <exception cref="WebSocketBadInputException"></exception> if value is not in specified range
         /// </summary>
         /// <param name="value">The value to be validated</param>
         /// <param name="name">Input parameter name</param>
@@ -79,16 +79,16 @@ namespace UniWebSocket.Validations
         {
             if (value < minValue)
             {
-                throw new WebsocketBadInputException($"Input parameter '{name}' is lower than {minValue}. Please correct it.");
+                throw new WebSocketBadInputException($"Input parameter '{name}' is lower than {minValue}. Please correct it.");
             }
             if (value > maxValue)
             {
-                throw new WebsocketBadInputException($"Input parameter '{name}' is higher than {maxValue}. Please correct it.");
+                throw new WebSocketBadInputException($"Input parameter '{name}' is higher than {maxValue}. Please correct it.");
             }
         }
 
         /// <summary>
-        /// It throws <exception cref="WebsocketBadInputException"></exception> if value is not in specified range
+        /// It throws <exception cref="WebSocketBadInputException"></exception> if value is not in specified range
         /// </summary>
         /// <param name="value">The value to be validated</param>
         /// <param name="name">Input parameter name</param>
@@ -98,11 +98,11 @@ namespace UniWebSocket.Validations
         {
             if (value < minValue)
             {
-                throw new WebsocketBadInputException($"Input parameter '{name}' is lower than {minValue}. Please correct it.");
+                throw new WebSocketBadInputException($"Input parameter '{name}' is lower than {minValue}. Please correct it.");
             }
             if (value > maxValue)
             {
-                throw new WebsocketBadInputException($"Input parameter '{name}' is higher than {maxValue}. Please correct it.");
+                throw new WebSocketBadInputException($"Input parameter '{name}' is higher than {maxValue}. Please correct it.");
             }
         }
     }

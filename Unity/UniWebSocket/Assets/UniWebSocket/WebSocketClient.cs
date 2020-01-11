@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using UniRx;
 using UniWebSocket.Exceptions;
 using UniWebSocket.Threading;
+using WebSocketException = UniWebSocket.Exceptions.WebSocketException;
 
 namespace UniWebSocket
 {
@@ -13,7 +14,7 @@ namespace UniWebSocket
     {
         private readonly ILogger _logger;
 
-        private readonly WebsocketAsyncLock _locker = new WebsocketAsyncLock();
+        private readonly WebSocketAsyncLock _locker = new WebSocketAsyncLock();
         private Uri _url;
         private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
 
@@ -344,7 +345,7 @@ namespace UniWebSocket
                 return null;
             var specific = client as ClientWebSocket;
             if (specific == null)
-                throw new WebsocketException("Cannot cast 'WebSocket' client to 'ClientWebSocket', " +
+                throw new WebSocketException("Cannot cast 'WebSocket' client to 'ClientWebSocket', " +
                                              "provide correct type via factory or don't use this property at all.");
             return specific;
         }
