@@ -199,7 +199,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
-                _exceptionSubject.OnNext(new WebSocketErrorChunk(e, ErrorType.Dispose));
+                _exceptionSubject?.OnNext(new WebSocketErrorChunk(e, ErrorType.Dispose));
             }
 
             IsRunning = false;

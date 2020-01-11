@@ -91,7 +91,6 @@ namespace UniWebSocket
                 }
 
                 _logger?.Trace(FormatLogMessage($"Sending text thread failed, error: {e.Message}. Creating a new sending thread."));
-                // StartBackgroundThreadForSendingText();
             }
         }
 
@@ -129,7 +128,6 @@ namespace UniWebSocket
                 }
 
                 _logger?.Trace(FormatLogMessage($"Sending binary thread failed, error: {e.Message}. Creating a new sending thread."));
-                // StartBackgroundThreadForSendingBinary();
             }
         }
 
