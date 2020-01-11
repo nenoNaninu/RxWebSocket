@@ -4,9 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UniRx;
-using UniWebSocket.Exceptions;
 using UniWebSocket.Threading;
-using WebSocketException = UniWebSocket.Exceptions.WebSocketException;
 
 namespace UniWebSocket
 {
@@ -345,8 +343,7 @@ namespace UniWebSocket
                 return null;
             var specific = client as ClientWebSocket;
             if (specific == null)
-                throw new WebSocketException("Cannot cast 'WebSocket' client to 'ClientWebSocket', " +
-                                             "provide correct type via factory or don't use this property at all.");
+                throw new UniWebSocket.Exceptions.WebSocketException("Cannot cast 'WebSocket' client to 'ClientWebSocket', provide correct type via factory or don't use this property at all.");
             return specific;
         }
 
