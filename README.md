@@ -41,9 +41,8 @@ webSocketClient.Send(array);
 
 //send text
 //The Send function guarantees the transmission order using queue.
-//await for pushed to the queue.
-//It does not wait for the transmission to complete.
-await webSocketClient.Send("string or byte[]");
+//It doesn't wait for the transmission to complete.
+webSocketClient.Send("string or byte[]");
 
 //The SendInstant function ignores the queue used inside the Send function and sends it immediately.
 //await for transmission to complete.
