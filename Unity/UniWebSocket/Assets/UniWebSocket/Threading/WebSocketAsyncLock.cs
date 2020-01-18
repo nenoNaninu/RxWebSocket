@@ -17,57 +17,33 @@ namespace UniWebSocket.Threading
     /// </summary>
     public class WebSocketAsyncLock
     {
-        private readonly Task<IDisposable> _releaserTask;
-        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-        private readonly IDisposable _releaser;
+        private readonly SemaphoreSlim _semaphore;
+        private readonly LockReleaser _lockReleaser;
 
-        /// <summary>
-        /// Class that wraps SemaphoreSlim and enables to use locking inside 'using' blocks easily
-        /// Don't need to bother with releasing and handling SemaphoreSlim correctly
-        /// </summary>
         public WebSocketAsyncLock()
         {
-            _releaser = new Releaser(_semaphore);
-            _releaserTask = Task.FromResult(_releaser);
+            _semaphore = new SemaphoreSlim(1, 1);
+            _lockReleaser = new LockReleaser(_semaphore);
         }
 
-        /// <summary>
-        /// Use inside 'using' block
-        /// </summary>
-        public IDisposable Lock()
+        public async Task<LockReleaser> LockAsync()
         {
-            _semaphore.Wait();
-            return _releaser;
+            await _semaphore.WaitAsync().ConfigureAwait(false);
+            return _lockReleaser;
         }
 
-        /// <summary>
-        /// Use inside 'using' block with await
-        /// </summary>
-        public Task<IDisposable> LockAsync()
+        public class LockReleaser : IDisposable
         {
-            Task waitTask = _semaphore.WaitAsync();
-            return waitTask.IsCompleted
-                ? _releaserTask
-                : waitTask.ContinueWith(
-                    (_, releaser) => (IDisposable)releaser,
-                    _releaser,
-                    CancellationToken.None,
-                    TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Default);//Default is theadPool
-        }
+            readonly SemaphoreSlim _semaphore;
 
-        private class Releaser : IDisposable
-        {
-            private readonly SemaphoreSlim _semaphore;
-
-            public Releaser(SemaphoreSlim semaphore)
+            public LockReleaser(SemaphoreSlim semaphore)
             {
                 _semaphore = semaphore;
             }
 
             public void Dispose()
             {
-                _semaphore.Release();
+                _semaphore?.Release();
             }
         }
     }

@@ -52,6 +52,13 @@ namespace UniWebsocket.Sample
         public Task Send(string message)
         {
             _webSocketClient.Send(Encoding.UTF8.GetBytes(message));
+            // _webSocketClient.Send(Encoding.UTF8.GetBytes(message + " 1"));
+            // _webSocketClient.Send(Encoding.UTF8.GetBytes(message + " 2"));
+            // _ = _webSocketClient.SendInstant(Encoding.UTF8.GetBytes(message + " instant0"));
+            // _webSocketClient.Send(Encoding.UTF8.GetBytes(message + " 3"));
+            // _webSocketClient.Send(Encoding.UTF8.GetBytes(message + " 4"));
+            // _webSocketClient.Send(Encoding.UTF8.GetBytes(message + " 5"));
+            // _ = _webSocketClient.SendInstant(Encoding.UTF8.GetBytes(message + " instant1"));
             return Task.CompletedTask;
         }
 
