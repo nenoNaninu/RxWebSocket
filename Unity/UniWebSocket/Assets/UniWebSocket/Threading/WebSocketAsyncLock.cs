@@ -45,7 +45,11 @@ namespace UniWebSocket.Threading
         /// </summary>
         public Task<IDisposable> LockAsync()
         {
+            //sendでbyteとstringがそれぞれキューに入っていたり,sendでキューから送信している際にSendInstantが走ると
+            //ブロックされるのでIsCompletedではなかったりする。
             Task waitTask = _semaphore.WaitAsync();
+            //ブロックしない場合は普通に _releaser を返す
+            //ブロックしていた場合は、_semaphoreが開放されたらContinueWithが走る
             return waitTask.IsCompleted
                 ? _releaserTask
                 : waitTask.ContinueWith(
