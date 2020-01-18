@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 namespace UniWebSocket.Threading
 {
     /// <summary>
-    /// Class that wraps SemaphoreSlim and enables to use locking inside 'using' blocks easily
-    /// Don't need to bother with releasing and handling SemaphoreSlim correctly
     /// Example:
     /// <code>
     /// using(await _asyncLock.LockAsync())
@@ -15,24 +13,24 @@ namespace UniWebSocket.Threading
     /// }
     /// </code>
     /// </summary>
-    public class WebSocketAsyncLock
+    public class AsyncLock
     {
         private readonly SemaphoreSlim _semaphore;
         private readonly LockReleaser _lockReleaser;
 
-        public WebSocketAsyncLock()
+        public AsyncLock()
         {
             _semaphore = new SemaphoreSlim(1, 1);
             _lockReleaser = new LockReleaser(_semaphore);
         }
 
-        public async Task<LockReleaser> LockAsync()
+        public async Task<IDisposable> LockAsync()
         {
             await _semaphore.WaitAsync().ConfigureAwait(false);
             return _lockReleaser;
         }
 
-        public class LockReleaser : IDisposable
+        private class LockReleaser : IDisposable
         {
             readonly SemaphoreSlim _semaphore;
 

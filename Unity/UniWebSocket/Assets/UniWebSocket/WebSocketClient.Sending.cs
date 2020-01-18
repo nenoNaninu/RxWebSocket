@@ -70,7 +70,7 @@ namespace UniWebSocket
                     catch (Exception e)
                     {
                         _logger?.Error(FormatLogMessage($"Failed to send text message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketErrorChunk(e, ErrorType.SendText));
+                        _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendText));
                     }
                 }
             }
@@ -107,7 +107,7 @@ namespace UniWebSocket
                     catch (Exception e)
                     {
                         _logger?.Error(FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketErrorChunk(e, ErrorType.SendBinary));
+                        _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendBinary));
                     }
                 }
             }

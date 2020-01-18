@@ -12,7 +12,7 @@ namespace UniWebSocket
     {
         private readonly ILogger _logger;
 
-        private readonly WebSocketAsyncLock _locker = new WebSocketAsyncLock();
+        private readonly AsyncLock _locker = new AsyncLock();
         private Uri _url;
         private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
 
@@ -27,7 +27,7 @@ namespace UniWebSocket
 
         private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
         private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
-        private readonly Subject<WebSocketErrorChunk> _exceptionSubject = new Subject<WebSocketErrorChunk>();
+        private readonly Subject<WebSocketErrorDetail> _exceptionSubject = new Subject<WebSocketErrorDetail>();
 
         /// <summary>
         /// A simple websocket client
@@ -116,7 +116,7 @@ namespace UniWebSocket
         /// </summary>
         public IObservable<WebSocketCloseStatus> DisconnectionHappened => _disconnectedSubject.AsObservable();
 
-        public IObservable<WebSocketErrorChunk> ErrorHappened => _exceptionSubject.AsObservable();
+        public IObservable<WebSocketErrorDetail> ErrorHappened => _exceptionSubject.AsObservable();
 
         /// <summary>
         /// Get or set the name of the current websocket client instance.
@@ -197,7 +197,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
-                _exceptionSubject?.OnNext(new WebSocketErrorChunk(e, ErrorType.Dispose));
+                _exceptionSubject?.OnNext(new WebSocketErrorDetail(e, ErrorType.Dispose));
             }
 
             IsRunning = false;
@@ -232,7 +232,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
-                _exceptionSubject.OnNext(new WebSocketErrorChunk(e, ErrorType.Close));
+                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.Close));
             }
 
             IsStarted = false;
@@ -267,7 +267,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Exception while connecting. detail: {e.Message}"));
-                _exceptionSubject.OnNext(new WebSocketErrorChunk(e, ErrorType.Start));
+                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.Start));
             }
         }
 
@@ -333,7 +333,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Error while listening to websocket stream, error: '{e.Message}'"));
-                _exceptionSubject.OnNext(new WebSocketErrorChunk(e, ErrorType.Listen));
+                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.Listen));
             }
         }
 

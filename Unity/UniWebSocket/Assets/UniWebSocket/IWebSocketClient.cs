@@ -31,7 +31,7 @@ namespace UniWebSocket
         /// <summary>
         /// Stream for exception event
         /// </summary>
-        IObservable<WebSocketErrorChunk> ErrorHappened { get; }
+        IObservable<WebSocketErrorDetail> ErrorHappened { get; }
 
         /// <summary>
         /// Get or set the name of the current websocket client instance.
