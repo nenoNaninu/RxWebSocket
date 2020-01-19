@@ -23,6 +23,7 @@ namespace UniWebSocket
         IObservable<byte[]> BinaryMessageReceived { get; }
 
         IObservable<string> TextMessageReceived { get; }
+        
         /// <summary>
         /// Stream for disconnection event (triggered after the connection was lost) 
         /// </summary>
