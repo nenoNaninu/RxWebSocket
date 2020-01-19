@@ -32,7 +32,7 @@ namespace UniWebSocket.Threading
 
         private class LockReleaser : IDisposable
         {
-            readonly SemaphoreSlim _semaphore;
+            private readonly SemaphoreSlim _semaphore;
 
             public LockReleaser(SemaphoreSlim semaphore)
             {
