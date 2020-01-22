@@ -37,7 +37,7 @@ namespace UniWebSocket
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, int maxReceivedMessageSize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, GetClientFactory(clientFactory))
+            : this(url, GetConnectedClientFactory(clientFactory))
         {
             _logger = logger;
             _memoryPool = new byte[maxReceivedMessageSize];
@@ -51,7 +51,7 @@ namespace UniWebSocket
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
-            : this(url, GetClientFactory(clientFactory))
+            : this(url, GetConnectedClientFactory(clientFactory))
         {
             _logger = logger;
         }
@@ -62,7 +62,7 @@ namespace UniWebSocket
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
-            : this(url, GetClientFactory(clientFactory))
+            : this(url, GetConnectedClientFactory(clientFactory))
         {
         }
 
@@ -240,7 +240,7 @@ namespace UniWebSocket
             return true;
         }
 
-        private static Func<Uri, CancellationToken, Task<WebSocket>> GetClientFactory(Func<ClientWebSocket> clientFactory)
+        private static Func<Uri, CancellationToken, Task<WebSocket>> GetConnectedClientFactory(Func<ClientWebSocket> clientFactory)
         {
             if (clientFactory == null)
                 return null;
