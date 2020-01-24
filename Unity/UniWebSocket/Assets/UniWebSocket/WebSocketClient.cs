@@ -43,7 +43,6 @@ namespace UniWebSocket
             _memoryPool = new byte[maxReceivedMessageSize];
         }
 
-
         /// <summary>
         /// A simple websocket client
         /// </summary>
@@ -150,7 +149,6 @@ namespace UniWebSocket
         /// Last time the message was received.
         /// </summary>
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
-
 
         /// <summary>
         /// Start listening to the websocket stream on the background thread
