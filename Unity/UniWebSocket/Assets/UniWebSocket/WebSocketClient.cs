@@ -105,11 +105,13 @@ namespace UniWebSocket
 
         public IObservable<byte[]> BinaryMessageReceived => _messageReceivedSubject.AsObservable()
             .Where(x => x.MessageType == WebSocketMessageType.Binary)
-            .Select(x => x.Binary);
+            .Select(x => x.Binary)
+            .Publish().RefCount();
 
         public IObservable<string> TextMessageReceived => _messageReceivedSubject.AsObservable()
             .Where(x => x.MessageType == WebSocketMessageType.Text)
-            .Select(x => x.Text);
+            .Select(x => x.Text)
+            .Publish().RefCount();
 
         /// <summary>
         /// Stream for disconnection event (triggered after the connection was lost) 
