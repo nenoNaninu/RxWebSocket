@@ -85,8 +85,7 @@ namespace UniWebSocket
                 return client;
             });
         }
-
-        /// <inheritdoc />
+        
         public Uri Url
         {
             get => _url;
