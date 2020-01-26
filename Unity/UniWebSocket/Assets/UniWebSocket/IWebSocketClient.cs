@@ -13,11 +13,11 @@ namespace UniWebSocket
         Uri Url { get; set; }
 
         IObservable<ResponseMessage> MessageReceived { get; }
-        
+
         IObservable<byte[]> BinaryMessageReceived { get; }
 
         IObservable<string> TextMessageReceived { get; }
-        
+
         /// <summary>
         /// Stream for disconnection event (triggered after the connection was lost) 
         /// </summary>
@@ -26,7 +26,7 @@ namespace UniWebSocket
         /// <summary>
         /// Stream for exception event
         /// </summary>
-        IObservable<WebSocketErrorDetail> ErrorHappened { get; }
+        IObservable<WebSocketExceptionDetail> ErrorHappened { get; }
 
         /// <summary>
         /// Get or set the name of the current websocket client instance.

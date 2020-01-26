@@ -27,8 +27,8 @@ namespace UniWebSocket
 
         private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
         private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
-        private readonly Subject<WebSocketErrorDetail> _exceptionSubject = new Subject<WebSocketErrorDetail>();
-        
+        private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
+
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="maxReceivedMessageSize">Maximum array(byte[]) length of received data. default is 512*1024 byte(512KB)</param>
         /// <param name="logger"></param>
@@ -48,19 +48,19 @@ namespace UniWebSocket
         {
             _logger = logger;
         }
-        
+
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
             : this(url, GetConnectedClientFactory(clientFactory))
         {
         }
-        
+
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected. Use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
-            Validations.Validations.ValidateInput(url, nameof(url));
+            Validations.ValidationUtils.ValidateInput(url, nameof(url));
 
             _url = url;
             _connectionFactory = connectionFactory ?? (async (uri, token) =>
@@ -73,17 +73,17 @@ namespace UniWebSocket
                 return client;
             });
         }
-        
+
         public Uri Url
         {
             get => _url;
             set
             {
-                Validations.Validations.ValidateInput(value, nameof(Url));
+                Validations.ValidationUtils.ValidateInput(value, nameof(Url));
                 _url = value;
             }
         }
-        
+
         public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
 
         public IObservable<byte[]> BinaryMessageReceived => _messageReceivedSubject.AsObservable()
@@ -101,7 +101,7 @@ namespace UniWebSocket
         /// </summary>
         public IObservable<WebSocketCloseStatus> DisconnectionHappened => _disconnectedSubject.AsObservable();
 
-        public IObservable<WebSocketErrorDetail> ErrorHappened => _exceptionSubject.AsObservable();
+        public IObservable<WebSocketExceptionDetail> ErrorHappened => _exceptionSubject.AsObservable();
 
         /// <summary>
         /// Get or set the name of the current websocket client instance.
@@ -168,15 +168,15 @@ namespace UniWebSocket
             {
                 _cancellationAllJobs?.Cancel();
                 _cancellationCurrentJobs?.Cancel();
-                
+
                 _client?.Abort();
                 _client?.Dispose();
-                
+
                 _cancellationAllJobs?.Dispose();
                 _cancellationCurrentJobs?.Dispose();
                 _messagesTextToSendQueue?.Dispose();
                 _messagesBinaryToSendQueue?.Dispose();
-                
+
                 _messageReceivedSubject?.Dispose();
                 _disconnectedSubject?.Dispose();
                 _exceptionSubject?.Dispose();
@@ -184,7 +184,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
-                _exceptionSubject?.OnNext(new WebSocketErrorDetail(e, ErrorType.Dispose));
+                _exceptionSubject?.OnNext(new WebSocketExceptionDetail(e, ErrorType.Dispose));
             }
 
             IsRunning = false;
@@ -219,7 +219,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
-                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.Close));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Close));
             }
 
             IsStarted = false;
@@ -254,7 +254,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Exception while connecting. detail: {e.Message}"));
-                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.Start));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Start));
             }
         }
 
@@ -320,7 +320,7 @@ namespace UniWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Error while listening to websocket stream, error: '{e.Message}'"));
-                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.Listen));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Listen));
             }
         }
 
@@ -330,7 +330,8 @@ namespace UniWebSocket
                 return null;
             var specific = client as ClientWebSocket;
             if (specific == null)
-                throw new UniWebSocket.Exceptions.WebSocketException("Cannot cast 'WebSocket' client to 'ClientWebSocket', provide correct type via factory or don't use this property at all.");
+                throw new UniWebSocket.Exceptions.WebSocketException(
+                    "Cannot cast 'WebSocket' client to 'ClientWebSocket', provide correct type via factory or don't use this property at all.");
             return specific;
         }
 

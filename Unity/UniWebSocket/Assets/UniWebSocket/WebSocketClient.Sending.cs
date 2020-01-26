@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
+using UniWebSocket.Validations;
 
 namespace UniWebSocket
 {
@@ -17,8 +18,7 @@ namespace UniWebSocket
         /// <param name="message">Text message to be sent</param>
         public void Send(string message)
         {
-            Validations.Validations.ValidateInput(message, nameof(message));
-
+            ValidationUtils.ValidateInput(message, nameof(message));
             _messagesTextToSendQueue.Add(message);
         }
 
@@ -29,7 +29,7 @@ namespace UniWebSocket
         /// <param name="message">Binary message to be sent</param>
         public void Send(byte[] message)
         {
-            Validations.Validations.ValidateInput(message, nameof(message));
+            ValidationUtils.ValidateInput(message, nameof(message));
             _messagesBinaryToSendQueue.Add(message);
         }
 
@@ -40,8 +40,7 @@ namespace UniWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(string message)
         {
-            Validations.Validations.ValidateInput(message, nameof(message));
-
+            ValidationUtils.ValidateInput(message, nameof(message));
             return SendInternalSynchronized(message);
         }
 
@@ -68,7 +67,7 @@ namespace UniWebSocket
                     catch (Exception e)
                     {
                         _logger?.Error(FormatLogMessage($"Failed to send text message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendText));
+                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendText));
                     }
                 }
             }
@@ -88,9 +87,7 @@ namespace UniWebSocket
                     return;
                 }
 
-                _logger?.Trace(FormatLogMessage($"Sending text thread failed, error: {e.Message}. Creating a new sending thread."));
-                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendText));
-
+                _logger?.Trace(FormatLogMessage($"Sending text thread failed, error: {e.Message}."));
             }
         }
 
@@ -107,7 +104,7 @@ namespace UniWebSocket
                     catch (Exception e)
                     {
                         _logger?.Error(FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendBinary));
+                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendBinary));
                     }
                 }
             }
@@ -127,8 +124,7 @@ namespace UniWebSocket
                     return;
                 }
 
-                _logger?.Trace(FormatLogMessage($"Sending binary thread failed, error: {e.Message}. Creating a new sending thread."));
-                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendBinary));
+                _logger?.Trace(FormatLogMessage($"Sending binary thread failed, error: {e.Message}."));
             }
         }
 
