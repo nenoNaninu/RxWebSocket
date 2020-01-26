@@ -5,9 +5,6 @@ using System.Threading.Tasks;
 
 namespace UniWebSocket
 {
-    /// <summary>
-    /// A simple websocket client with built-in reconnection and error handling
-    /// </summary>
     public interface IWebSocketClient : IDisposable
     {
         /// <summary>
@@ -15,9 +12,6 @@ namespace UniWebSocket
         /// </summary>
         Uri Url { get; set; }
 
-        /// <summary>
-        /// Stream with received message (raw format)
-        /// </summary>
         IObservable<ResponseMessage> MessageReceived { get; }
         
         IObservable<byte[]> BinaryMessageReceived { get; }
@@ -41,7 +35,7 @@ namespace UniWebSocket
         string Name { get; set; }
 
         /// <summary>
-        /// Returns true if Start() method was called at least once. False if not started or disposed
+        /// Returns true if ConnectAndStartListening() method was called at least once. False if not started or disposed
         /// </summary>
         bool IsStarted { get; }
 
@@ -52,7 +46,6 @@ namespace UniWebSocket
 
         /// <summary>
         /// Returns currently used native websocket client.
-        /// Use with caution, on every reconnection there will be a new instance. 
         /// </summary>
         ClientWebSocket NativeClient { get; }
 
@@ -63,7 +56,7 @@ namespace UniWebSocket
         Encoding MessageEncoding { get; set; }
 
         /// <summary>
-        /// Start listening to the websocket stream on the background thread
+        /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
         Task ConnectAndStartListening();
 
@@ -90,9 +83,7 @@ namespace UniWebSocket
 
         /// <summary>
         /// Send message to the websocket channel. 
-        /// It doesn't use a sending queue, 
-        /// beware of issue while sending two messages in the exact same time 
-        /// on the full .NET Framework platform
+        /// It doesn't use a sending queue
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(string message);
@@ -100,8 +91,6 @@ namespace UniWebSocket
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// It doesn't use a sending queue, 
-        /// beware of issue while sending two messages in the exact same time 
-        /// on the full .NET Framework platform
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(byte[] message);

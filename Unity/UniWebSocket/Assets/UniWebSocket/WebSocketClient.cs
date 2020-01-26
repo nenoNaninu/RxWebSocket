@@ -28,10 +28,7 @@ namespace UniWebSocket
         private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
         private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
         private readonly Subject<WebSocketErrorDetail> _exceptionSubject = new Subject<WebSocketErrorDetail>();
-
-        /// <summary>
-        /// A simple websocket client
-        /// </summary>
+        
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="maxReceivedMessageSize">Maximum array(byte[]) length of received data. default is 512*1024 byte(512KB)</param>
         /// <param name="logger"></param>
@@ -43,9 +40,6 @@ namespace UniWebSocket
             _memoryPool = new byte[maxReceivedMessageSize];
         }
 
-        /// <summary>
-        /// A simple websocket client
-        /// </summary>
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
@@ -54,20 +48,14 @@ namespace UniWebSocket
         {
             _logger = logger;
         }
-
-        /// <summary>
-        /// A simple websocket client
-        /// </summary>
+        
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
             : this(url, GetConnectedClientFactory(clientFactory))
         {
         }
-
-        /// <summary>
-        /// A simple websocket client
-        /// </summary>
+        
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected. Use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
@@ -95,10 +83,7 @@ namespace UniWebSocket
                 _url = value;
             }
         }
-
-        /// <summary>
-        /// Stream with received message (raw format)
-        /// </summary>
+        
         public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
 
         public IObservable<byte[]> BinaryMessageReceived => _messageReceivedSubject.AsObservable()
@@ -125,7 +110,7 @@ namespace UniWebSocket
         public string Name { get; set; }
 
         /// <summary>
-        /// Returns true if Start() method was called at least once. False if not started or disposed
+        /// Returns true if ConnectAndStartListening() method was called at least once. False if not started or disposed
         /// </summary>
         public bool IsStarted { get; private set; }
 
@@ -142,7 +127,7 @@ namespace UniWebSocket
         }
 
         /// <inheritdoc />
-        public ClientWebSocket NativeClient => GetSpecificOrThrow(_client);
+        public ClientWebSocket NativeClient => GetNativeClient(_client);
 
         /// <summary>
         /// Last time the message was received.
@@ -336,7 +321,7 @@ namespace UniWebSocket
             }
         }
 
-        private ClientWebSocket GetSpecificOrThrow(WebSocket client)
+        private ClientWebSocket GetNativeClient(WebSocket client)
         {
             if (client == null)
                 return null;

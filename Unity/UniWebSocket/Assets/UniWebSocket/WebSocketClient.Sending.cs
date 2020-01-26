@@ -35,8 +35,7 @@ namespace UniWebSocket
 
         /// <summary>
         /// Send text message to the websocket channel. 
-        /// It doesn't use a sending queue, 
-        /// beware of issue while sending two messages in the exact same time 
+        /// It doesn't use a sending queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(string message)
@@ -48,8 +47,7 @@ namespace UniWebSocket
 
         /// <summary>
         /// Send binary message to the websocket channel. 
-        /// It doesn't use a sending queue, 
-        /// beware of issue while sending two messages in the exact same time 
+        /// It doesn't use a sending queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(byte[] message)
@@ -91,6 +89,8 @@ namespace UniWebSocket
                 }
 
                 _logger?.Trace(FormatLogMessage($"Sending text thread failed, error: {e.Message}. Creating a new sending thread."));
+                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendText));
+
             }
         }
 
@@ -128,6 +128,7 @@ namespace UniWebSocket
                 }
 
                 _logger?.Trace(FormatLogMessage($"Sending binary thread failed, error: {e.Message}. Creating a new sending thread."));
+                _exceptionSubject.OnNext(new WebSocketErrorDetail(e, ErrorType.SendBinary));
             }
         }
 
