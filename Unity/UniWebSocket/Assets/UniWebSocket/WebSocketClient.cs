@@ -166,14 +166,17 @@ namespace UniWebSocket
             _logger?.Log(FormatLogMessage("Disposing.."));
             try
             {
-                _cancellationCurrentJobs?.Cancel();
                 _cancellationAllJobs?.Cancel();
+                _cancellationCurrentJobs?.Cancel();
+                
                 _client?.Abort();
                 _client?.Dispose();
-                _cancellationCurrentJobs?.Dispose();
+                
                 _cancellationAllJobs?.Dispose();
+                _cancellationCurrentJobs?.Dispose();
                 _messagesTextToSendQueue?.Dispose();
                 _messagesBinaryToSendQueue?.Dispose();
+                
                 _messageReceivedSubject?.Dispose();
                 _disconnectedSubject?.Dispose();
                 _exceptionSubject?.Dispose();
