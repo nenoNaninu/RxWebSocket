@@ -3,7 +3,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using UniRx;
-using UnityEngine;
 using Utf8Json;
 
 namespace UniWebSocket.Sample
@@ -42,7 +41,7 @@ namespace UniWebSocket.Sample
         {
             if (_webSocketClient != null)
             {
-                Debug.Log("ChatClient will be closed!!");
+                _logger?.Log("ChatClient will be closed!!");
                 await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal", true);
             }
         }

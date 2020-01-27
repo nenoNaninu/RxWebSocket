@@ -1,6 +1,4 @@
-using System;
 using UnityEngine;
-using UniWebSocket;
 
 namespace UniWebSocket.Sample
 {

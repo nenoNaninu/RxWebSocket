@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Net.WebSockets;
-using System.Threading;
 using System.Threading.Tasks;
 using UniRx;
-using UnityEditor.PackageManager;
 using UnityEngine;
-using UniWebSocket;
 
 namespace UniWebSocket.Sample
 {

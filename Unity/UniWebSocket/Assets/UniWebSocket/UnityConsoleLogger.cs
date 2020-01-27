@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using UniRx;
 using UnityEngine;
 
 namespace UniWebSocket
@@ -40,7 +39,7 @@ namespace UniWebSocket
         {
             _context.Post(Debug.Log, message);
         }
-        
+
         public class ErrorChunk
         {
             public string Message { get; }
