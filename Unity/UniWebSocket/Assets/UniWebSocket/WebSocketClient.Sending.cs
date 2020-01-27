@@ -24,6 +24,7 @@ namespace UniWebSocket
                 _messagesTextToSendQueue.Add(message);
                 return;
             }
+
             throw new WebSocketBadInputException($"Input message (string) of the Send function is null or empty. Please correct it.");
         }
 
@@ -39,6 +40,7 @@ namespace UniWebSocket
                 _messagesBinaryToSendQueue.Add(message);
                 return;
             }
+
             throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
         }
 
@@ -53,6 +55,7 @@ namespace UniWebSocket
             {
                 return SendInternalSynchronized(message);
             }
+
             throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
         }
 
@@ -67,6 +70,7 @@ namespace UniWebSocket
             {
                 return SendInternalSynchronized(message);
             }
+
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
         }
 

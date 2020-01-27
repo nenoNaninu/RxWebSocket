@@ -12,7 +12,7 @@ namespace UniWebSocket.Validations
         /// </summary>
         /// <param name="value">The value to be validated</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ValidateInput(string value) =>!string.IsNullOrWhiteSpace(value);
+        public static bool ValidateInput(string value) => !string.IsNullOrWhiteSpace(value);
 
         /// <summary>
         /// returns false for bad input.

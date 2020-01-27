@@ -86,6 +86,7 @@ namespace UniWebSocket
                 {
                     throw new WebSocketBadInputException($"Input url is null. Please correct it.");
                 }
+
                 _url = value;
             }
         }
@@ -124,9 +125,9 @@ namespace UniWebSocket
         /// Returns true if client is running and connected to the server
         /// </summary>
         public bool IsRunning { get; private set; }
-        
+
         public bool Disposed { get; private set; }
-        
+
         public bool IsClientConnected => _client != null && _client.State == WebSocketState.Open;
 
         public Encoding MessageEncoding
