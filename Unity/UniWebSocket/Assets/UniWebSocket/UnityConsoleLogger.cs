@@ -16,26 +16,41 @@ namespace UniWebSocket
 
         public void Log(string message)
         {
-            _context.Post(_ => Debug.Log(message), null);
+            _context.Post(Debug.Log, message);
         }
 
         public void Error(string message)
         {
-            _context.Post(_ => Debug.LogError(message), null);
+            _context.Post(Debug.LogError, message);
         }
 
         public void Error(Exception e, string message)
         {
-            _context.Post(_ =>
+            _context.Post(x =>
             {
-                Debug.LogError(message);
-                Debug.LogException(e);
-            }, null);
+                if (x is ErrorChunk errorChunk)
+                {
+                    Debug.LogError(errorChunk.Message);
+                    Debug.LogException(errorChunk.Exception);
+                }
+            }, new ErrorChunk(message, e));
         }
 
         public void Trace(string message)
         {
-            _context.Post(_ => Debug.Log(message), null);
+            _context.Post(Debug.Log, message);
+        }
+        
+        public class ErrorChunk
+        {
+            public string Message { get; }
+            public Exception Exception { get; }
+
+            public ErrorChunk(string message, Exception e)
+            {
+                Message = message;
+                Exception = e;
+            }
         }
     }
 }
