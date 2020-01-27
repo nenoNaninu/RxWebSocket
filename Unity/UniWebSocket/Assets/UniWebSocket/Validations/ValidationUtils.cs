@@ -7,7 +7,7 @@ namespace UniWebSocket.Validations
     internal static class ValidationUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsNullOrEmpty(this Array array)
+        private static bool IsNullOrEmpty<T>(this T[] array)
         {
             return array == null || array.Length == 0;
         }
