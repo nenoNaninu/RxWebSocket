@@ -30,9 +30,8 @@ webSocketClient.DisconnectionHappened
 webSocketClient.ErrorHappened
     .Subscribe(x => DoSomething(x));
 
-//start connect and start listening in background thread
-//Task.CompletedTask will return when it starts to be received.
-//It will not be blocked while receiving.
+//start connect and start listening in background thread.
+//await until websocket can connect.
 await webSocketClient.ConnectAndStartListening();
 
 //send bin
