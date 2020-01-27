@@ -35,7 +35,7 @@ namespace UniWebSocket
 
         public void Trace(string message)
         {
-            _context.Post(_ => { Debug.Log(message); }, null);
+            _context.Post(_ => Debug.Log(message), null);
         }
     }
 }
