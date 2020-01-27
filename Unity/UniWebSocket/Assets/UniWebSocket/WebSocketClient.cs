@@ -4,7 +4,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UniRx;
+using UniWebSocket.Exceptions;
 using UniWebSocket.Threading;
+using UniWebSocket.Validations;
 
 namespace UniWebSocket
 {
@@ -15,8 +17,6 @@ namespace UniWebSocket
         private readonly AsyncLock _locker = new AsyncLock();
         private Uri _url;
         private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
-
-        private bool _disposing;
 
         private readonly byte[] _memoryPool = new byte[1024 * 512];
 
@@ -60,7 +60,10 @@ namespace UniWebSocket
         /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected. Use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
-            Validations.ValidationUtils.ValidateInput(url, nameof(url));
+            if (!ValidationUtils.ValidateInput(url))
+            {
+                throw new WebSocketBadInputException($"url is null. Please correct it.");
+            }
 
             _url = url;
             _connectionFactory = connectionFactory ?? (async (uri, token) =>
@@ -79,7 +82,10 @@ namespace UniWebSocket
             get => _url;
             set
             {
-                Validations.ValidationUtils.ValidateInput(value, nameof(Url));
+                if (!ValidationUtils.ValidateInput(value))
+                {
+                    throw new WebSocketBadInputException($"Input url is null. Please correct it.");
+                }
                 _url = value;
             }
         }
@@ -118,15 +124,17 @@ namespace UniWebSocket
         /// Returns true if client is running and connected to the server
         /// </summary>
         public bool IsRunning { get; private set; }
+        
+        public bool Disposed { get; private set; }
+        
+        public bool IsClientConnected => _client != null && _client.State == WebSocketState.Open;
 
-        /// <inheritdoc />
         public Encoding MessageEncoding
         {
             get => _messageEncoding ?? Encoding.UTF8;
             set => _messageEncoding = value;
         }
 
-        /// <inheritdoc />
         public ClientWebSocket NativeClient => GetNativeClient(_client);
 
         /// <summary>
@@ -147,14 +155,16 @@ namespace UniWebSocket
 
             IsStarted = true;
 
-            _logger?.Log(FormatLogMessage("Starting.."));
             _cancellationCurrentJobs = new CancellationTokenSource();
             _cancellationAllJobs = new CancellationTokenSource();
 
-            await StartClient(_url, _cancellationCurrentJobs.Token).ConfigureAwait(false);
+            _logger?.Log(FormatLogMessage("Starting..."));
+            var connectionTask = StartClient(_url, _cancellationCurrentJobs.Token).ConfigureAwait(false);
 
             StartBackgroundThreadForSendingText();
             StartBackgroundThreadForSendingBinary();
+
+            await connectionTask;
         }
 
         /// <summary>
@@ -162,8 +172,8 @@ namespace UniWebSocket
         /// </summary>
         public void Dispose()
         {
-            _disposing = true;
-            _logger?.Log(FormatLogMessage("Disposing.."));
+            Disposed = true;
+            _logger?.Log(FormatLogMessage("Disposing..."));
             try
             {
                 _cancellationAllJobs?.Cancel();
@@ -218,7 +228,7 @@ namespace UniWebSocket
             }
             catch (Exception e)
             {
-                _logger?.Error(FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
+                _logger?.Error(e, FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
                 _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Close));
             }
 
@@ -258,10 +268,6 @@ namespace UniWebSocket
             }
         }
 
-        private bool IsClientConnected()
-        {
-            return _client.State == WebSocketState.Open;
-        }
 
         private async Task Listen(WebSocket client, CancellationToken token)
         {
@@ -300,7 +306,7 @@ namespace UniWebSocket
                         ? ResponseMessage.TextMessage(MessageEncoding.GetString(dstArray))
                         : ResponseMessage.BinaryMessage(dstArray);
 
-                    _logger?.Trace(FormatLogMessage($"Received:  {message.ToString()}"));
+                    _logger?.Log(FormatLogMessage($"Received:  {message.ToString()}"));
                     LastReceivedTime = DateTime.UtcNow;
                     _messageReceivedSubject.OnNext(message);
                 } while (client.State == WebSocketState.Open && !token.IsCancellationRequested);
@@ -330,7 +336,7 @@ namespace UniWebSocket
                 return null;
             var specific = client as ClientWebSocket;
             if (specific == null)
-                throw new UniWebSocket.Exceptions.WebSocketException(
+                throw new Exceptions.WebSocketException(
                     "Cannot cast 'WebSocket' client to 'ClientWebSocket', provide correct type via factory or don't use this property at all.");
             return specific;
         }

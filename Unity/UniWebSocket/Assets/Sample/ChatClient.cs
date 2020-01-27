@@ -4,11 +4,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UniRx;
 using UnityEngine;
-using UniWebSocket;
 using Utf8Json;
-using ILogger = UniWebSocket.ILogger;
 
-namespace UniWebsocket.Sample
+namespace UniWebSocket.Sample
 {
     public class ChatClient : IChatClient
     {

@@ -3,7 +3,7 @@ using System.Net.WebSockets;
 using System.Threading.Tasks;
 using UniWebSocket;
 
-namespace UniWebsocket.Sample
+namespace UniWebSocket.Sample
 {
     public interface IChatClient : IDisposable
     {

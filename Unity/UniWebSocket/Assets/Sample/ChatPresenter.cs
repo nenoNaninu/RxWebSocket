@@ -2,7 +2,7 @@ using System;
 using UniRx;
 using UnityEngine;
 
-namespace UniWebsocket.Sample
+namespace UniWebSocket.Sample
 {
     /// <summary>
     /// UIの操作

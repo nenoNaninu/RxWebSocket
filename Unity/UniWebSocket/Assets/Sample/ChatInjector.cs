@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UniWebSocket;
 
-namespace UniWebsocket.Sample
+namespace UniWebSocket.Sample
 {
     public class ChatInjector : MonoBehaviour
     {

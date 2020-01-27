@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
+using UniWebSocket.Exceptions;
 using UniWebSocket.Validations;
 
 namespace UniWebSocket
@@ -18,8 +19,12 @@ namespace UniWebSocket
         /// <param name="message">Text message to be sent</param>
         public void Send(string message)
         {
-            ValidationUtils.ValidateInput(message, nameof(message));
-            _messagesTextToSendQueue.Add(message);
+            if (ValidationUtils.ValidateInput(message))
+            {
+                _messagesTextToSendQueue.Add(message);
+                return;
+            }
+            throw new WebSocketBadInputException($"Input message (string) of the Send function is null or empty. Please correct it.");
         }
 
         /// <summary>
@@ -29,8 +34,12 @@ namespace UniWebSocket
         /// <param name="message">Binary message to be sent</param>
         public void Send(byte[] message)
         {
-            ValidationUtils.ValidateInput(message, nameof(message));
-            _messagesBinaryToSendQueue.Add(message);
+            if (ValidationUtils.ValidateInput(message))
+            {
+                _messagesBinaryToSendQueue.Add(message);
+                return;
+            }
+            throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
         }
 
         /// <summary>
@@ -40,8 +49,11 @@ namespace UniWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(string message)
         {
-            ValidationUtils.ValidateInput(message, nameof(message));
-            return SendInternalSynchronized(message);
+            if (ValidationUtils.ValidateInput(message))
+            {
+                return SendInternalSynchronized(message);
+            }
+            throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
         }
 
         /// <summary>
@@ -51,7 +63,11 @@ namespace UniWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(byte[] message)
         {
-            return SendInternalSynchronized(message);
+            if (ValidationUtils.ValidateInput(message))
+            {
+                return SendInternalSynchronized(message);
+            }
+            throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
         }
 
         private async Task SendTextFromQueue()
@@ -66,7 +82,7 @@ namespace UniWebSocket
                     }
                     catch (Exception e)
                     {
-                        _logger?.Error(FormatLogMessage($"Failed to send text message: '{message}'. Error: {e.Message}"));
+                        _logger?.Error(e, FormatLogMessage($"Failed to send text message: '{message}'. Error: {e.Message}"));
                         _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendText));
                     }
                 }
@@ -81,7 +97,7 @@ namespace UniWebSocket
             }
             catch (Exception e)
             {
-                if (_cancellationAllJobs.IsCancellationRequested || _disposing)
+                if (_cancellationAllJobs.IsCancellationRequested || Disposed)
                 {
                     // disposing/canceling, do nothing and exit
                     return;
@@ -103,7 +119,7 @@ namespace UniWebSocket
                     }
                     catch (Exception e)
                     {
-                        _logger?.Error(FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
+                        _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
                         _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendBinary));
                     }
                 }
@@ -118,7 +134,7 @@ namespace UniWebSocket
             }
             catch (Exception e)
             {
-                if (_cancellationAllJobs.IsCancellationRequested || _disposing)
+                if (_cancellationAllJobs.IsCancellationRequested || Disposed)
                 {
                     // disposing/canceling, do nothing and exit
                     return;
@@ -152,13 +168,13 @@ namespace UniWebSocket
 
         private async Task SendInternal(string message)
         {
-            if (!IsClientConnected())
+            if (!IsClientConnected)
             {
-                _logger?.Log(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
+                _logger?.Trace(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
                 return;
             }
 
-            _logger?.Trace(FormatLogMessage($"Sending:  {message}"));
+            _logger?.Log(FormatLogMessage($"Sending:  {message}"));
             var buffer = MessageEncoding.GetBytes(message);
             var messageSegment = new ArraySegment<byte>(buffer);
             await _client
@@ -176,13 +192,13 @@ namespace UniWebSocket
 
         private async Task SendInternal(byte[] message)
         {
-            if (!IsClientConnected())
+            if (!IsClientConnected)
             {
-                _logger?.Log(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Length}"));
+                _logger?.Trace(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Length}"));
                 return;
             }
 
-            _logger?.Trace(FormatLogMessage($"Sending binary, length: {message.Length}"));
+            _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Length}"));
 
             await _client
                 .SendAsync(new ArraySegment<byte>(message), WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)

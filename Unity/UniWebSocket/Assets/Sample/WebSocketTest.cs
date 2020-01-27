@@ -7,7 +7,7 @@ using UnityEditor.PackageManager;
 using UnityEngine;
 using UniWebSocket;
 
-namespace UniWebsocket.Sample
+namespace UniWebSocket.Sample
 {
     public class WebSocketTest : MonoBehaviour
     {

@@ -18,6 +18,7 @@ namespace UniWebSocket
         public void Error(Exception e, string message)
         {
             Debug.LogError(message);
+            Debug.LogException(e);
         }
 
         public void Trace(string message)

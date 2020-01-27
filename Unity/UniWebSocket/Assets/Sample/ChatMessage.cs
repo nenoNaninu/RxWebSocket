@@ -1,4 +1,4 @@
-namespace UniWebsocket.Sample
+namespace UniWebSocket.Sample
 {
     public class ChatMessage
     {
