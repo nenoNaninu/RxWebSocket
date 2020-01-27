@@ -31,13 +31,6 @@ namespace UniWebSocket
                 Debug.LogError(message);
                 Debug.LogException(e);
             }, null);
-
-            // Observable.Start(() => (message, e))
-            //     .ObserveOnMainThread()
-            //     .Subscribe(x =>
-            //     {
-            //
-            //     });
         }
 
         public void Trace(string message)
