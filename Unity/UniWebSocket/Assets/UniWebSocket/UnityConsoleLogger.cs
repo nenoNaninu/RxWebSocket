@@ -7,7 +7,7 @@ namespace UniWebSocket
 {
     public class UnityConsoleLogger : ILogger
     {
-        private SynchronizationContext _context;
+        private readonly SynchronizationContext _context;
 
         public UnityConsoleLogger()
         {
