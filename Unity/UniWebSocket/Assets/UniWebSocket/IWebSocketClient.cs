@@ -58,7 +58,7 @@ namespace UniWebSocket
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
-        Task ConnectAndStartListening();
+        Task<bool> ConnectAndStartListening();
 
         /// <summary>
         /// Stop/close websocket connection with custom close code.

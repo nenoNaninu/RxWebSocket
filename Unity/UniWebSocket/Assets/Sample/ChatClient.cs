@@ -24,6 +24,7 @@ namespace UniWebSocket.Sample
         public async Task Connect(string name, string uri)
         {
             _webSocketClient = new WebSocketClient(new Uri(uri), _logger);
+
             _webSocketClient.BinaryMessageReceived
                 .Select(bin => JsonSerializer.Deserialize<ChatMessage>(bin))
                 .Subscribe(x => _receivedSubject.OnNext(x));
@@ -31,7 +32,6 @@ namespace UniWebSocket.Sample
             _webSocketClient.DisconnectionHappened
                 .Do(x => _logger?.Log("DisconnectionHappened.Do()..." + x.ToString()))
                 .Subscribe(x => _errorSubject.OnNext(x));
-
 
             await _webSocketClient.ConnectAndStartListening();
             _webSocketClient.Send(Encoding.UTF8.GetBytes(name));

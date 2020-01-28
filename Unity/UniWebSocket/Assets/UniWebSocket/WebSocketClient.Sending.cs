@@ -107,7 +107,8 @@ namespace UniWebSocket
                     return;
                 }
 
-                _logger?.Trace(FormatLogMessage($"Sending text thread failed, error: {e.Message}."));
+                _logger?.Error(e, FormatLogMessage($"Sending text thread failed, error: {e.Message}."));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.TextQueue));
             }
         }
 
@@ -144,7 +145,8 @@ namespace UniWebSocket
                     return;
                 }
 
-                _logger?.Trace(FormatLogMessage($"Sending binary thread failed, error: {e.Message}."));
+                _logger?.Error(e, FormatLogMessage($"Sending binary thread failed, error: {e.Message}."));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.BinaryQueue));
             }
         }
 
@@ -174,15 +176,16 @@ namespace UniWebSocket
         {
             if (!IsClientConnected)
             {
-                _logger?.Trace(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
+                _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
                 return;
             }
 
             _logger?.Log(FormatLogMessage($"Sending:  {message}"));
+            
             var buffer = MessageEncoding.GetBytes(message);
-            var messageSegment = new ArraySegment<byte>(buffer);
+            
             await _client
-                .SendAsync(messageSegment, WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
+                .SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
                 .ConfigureAwait(false);
         }
 
@@ -198,7 +201,7 @@ namespace UniWebSocket
         {
             if (!IsClientConnected)
             {
-                _logger?.Trace(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Length}"));
+                _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Length}"));
                 return;
             }
 

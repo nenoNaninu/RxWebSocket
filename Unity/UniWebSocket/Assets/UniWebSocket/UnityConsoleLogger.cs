@@ -35,9 +35,9 @@ namespace UniWebSocket
             }, new ErrorChunk(message, e));
         }
 
-        public void Trace(string message)
+        public void Warn(string message)
         {
-            _context.Post(Debug.Log, message);
+            _context.Post(Debug.LogWarning, message);
         }
 
         public class ErrorChunk

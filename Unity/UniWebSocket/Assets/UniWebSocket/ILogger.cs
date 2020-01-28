@@ -7,6 +7,6 @@ namespace UniWebSocket
         void Log(string message);
         void Error(string message);
         void Error(Exception e, string message);
-        void Trace(string message);
+        void Warn(string message);
     }
 }

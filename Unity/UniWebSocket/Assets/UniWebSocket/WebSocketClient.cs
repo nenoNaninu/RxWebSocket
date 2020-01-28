@@ -138,20 +138,23 @@ namespace UniWebSocket
 
         public ClientWebSocket NativeClient => GetNativeClient(_client);
 
-        /// <summary>
-        /// Last time the message was received.
-        /// </summary>
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Start listening to the websocket stream on the background thread
         /// </summary>
-        public async Task ConnectAndStartListening()
+        public async Task<bool> ConnectAndStartListening()
         {
             if (IsStarted)
             {
                 _logger?.Log(FormatLogMessage("Client already started, ignoring.."));
-                return;
+                return false;
+            }
+
+            if (Disposed)
+            {
+                _logger?.Log(FormatLogMessage("Client already disposed, ignoring.."));
+                return false;
             }
 
             IsStarted = true;
@@ -166,6 +169,7 @@ namespace UniWebSocket
             StartBackgroundThreadForSendingBinary();
 
             await connectionTask;
+            return true;
         }
 
         /// <summary>
@@ -173,6 +177,11 @@ namespace UniWebSocket
         /// </summary>
         public void Dispose()
         {
+            if (Disposed)
+            {
+                return;
+            }
+            
             Disposed = true;
             _logger?.Log(FormatLogMessage("Disposing..."));
             try
@@ -268,7 +277,6 @@ namespace UniWebSocket
                 _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Start));
             }
         }
-
 
         private async Task Listen(WebSocket client, CancellationToken token)
         {
