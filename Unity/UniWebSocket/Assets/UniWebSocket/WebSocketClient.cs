@@ -340,21 +340,21 @@ namespace UniWebSocket
             }
         }
 
-        private ClientWebSocket GetNativeClient(WebSocket client)
+        private static ClientWebSocket GetNativeClient(WebSocket client)
         {
             if (client == null)
             {
                 return null;
             }
 
-            var specific = client as ClientWebSocket;
-            if (specific == null)
+            var nativeClient = client as ClientWebSocket;
+            if (nativeClient == null)
             {
                 throw new Exceptions.WebSocketException(
                     "Cannot cast 'WebSocket' client to 'ClientWebSocket', provide correct type via factory or don't use this property at all.");
             }
 
-            return specific;
+            return nativeClient;
         }
 
         private string FormatLogMessage(string msg)
