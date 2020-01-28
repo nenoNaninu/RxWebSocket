@@ -181,7 +181,7 @@ namespace UniWebSocket
             {
                 return;
             }
-            
+
             Disposed = true;
             _logger?.Log(FormatLogMessage("Disposing..."));
             try

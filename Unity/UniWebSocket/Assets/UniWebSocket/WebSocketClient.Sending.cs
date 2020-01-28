@@ -181,9 +181,9 @@ namespace UniWebSocket
             }
 
             _logger?.Log(FormatLogMessage($"Sending:  {message}"));
-            
+
             var buffer = MessageEncoding.GetBytes(message);
-            
+
             await _client
                 .SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
                 .ConfigureAwait(false);
