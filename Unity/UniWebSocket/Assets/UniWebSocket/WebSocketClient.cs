@@ -184,6 +184,7 @@ namespace UniWebSocket
 
             Disposed = true;
             _logger?.Log(FormatLogMessage("Disposing..."));
+
             try
             {
                 _cancellationAllJobs?.Cancel();
@@ -250,7 +251,9 @@ namespace UniWebSocket
         private static Func<Uri, CancellationToken, Task<WebSocket>> GetConnectedClientFactory(Func<ClientWebSocket> clientFactory)
         {
             if (clientFactory == null)
+            {
                 return null;
+            }
 
             return (async (uri, token) =>
             {
@@ -319,6 +322,7 @@ namespace UniWebSocket
                     LastReceivedTime = DateTime.UtcNow;
 
                     _messageReceivedSubject.OnNext(message);
+                    //
                 } while (client.State == WebSocketState.Open && !token.IsCancellationRequested);
             }
             catch (TaskCanceledException)
