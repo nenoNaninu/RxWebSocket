@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -12,29 +13,59 @@ namespace UniWebSocket
 {
     public partial class WebSocketClient : IWebSocketClient
     {
+        #region Member variable with state.
+
         private readonly ILogger _logger;
 
         private readonly AsyncLock _locker = new AsyncLock();
-        private Uri _url;
         private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
 
         private readonly byte[] _memoryPool = new byte[1024 * 512];
 
-        private WebSocket _client;
-        private CancellationTokenSource _cancellationCurrentJobs;
-        private CancellationTokenSource _cancellationAllJobs;
-        private Encoding _messageEncoding;
-
         private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
         private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
+
+        private readonly BlockingCollection<string> _messagesTextToSendQueue = new BlockingCollection<string>();
+        private readonly BlockingCollection<byte[]> _messagesBinaryToSendQueue = new BlockingCollection<byte[]>();
+
+        private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
+
+        private WebSocket _socket;
+
+        public Uri Url { get; }
+
+        /// <summary>
+        /// Get or set the name of the current websocket client instance.
+        /// For logging purpose (in case you use more parallel websocket clients and want to distinguish between them)
+        /// </summary>
+        public string Name { get; set; } = "CLIENT";
+
+        /// <summary>
+        /// Returns true if ConnectAndStartListening() method was called at least once. False if not started or disposed
+        /// </summary>
+        public bool IsStarted { get; private set; }
+
+        /// <summary>
+        /// Returns true if client is running and connected to the server
+        /// </summary>
+        public bool IsRunning { get; private set; }
+
+        public bool Disposed { get; private set; }
+
+        public Encoding MessageEncoding { get; set; } = Encoding.UTF8;
+
+        public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
+
+        #endregion
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="maxReceivedMessageSize">Maximum array(byte[]) length of received data. default is 512*1024 byte(512KB)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, int maxReceivedMessageSize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, GetConnectedClientFactory(clientFactory))
+            : this(url, MakeConnectedClientFactory(clientFactory))
         {
             _logger = logger;
             _memoryPool = new byte[maxReceivedMessageSize];
@@ -44,7 +75,7 @@ namespace UniWebSocket
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
-            : this(url, GetConnectedClientFactory(clientFactory))
+            : this(url, MakeConnectedClientFactory(clientFactory))
         {
             _logger = logger;
         }
@@ -52,7 +83,7 @@ namespace UniWebSocket
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
-            : this(url, GetConnectedClientFactory(clientFactory))
+            : this(url, MakeConnectedClientFactory(clientFactory))
         {
         }
 
@@ -65,7 +96,7 @@ namespace UniWebSocket
                 throw new WebSocketBadInputException($"url is null. Please correct it.");
             }
 
-            _url = url;
+            Url = url;
             _connectionFactory = connectionFactory ?? (async (uri, token) =>
             {
                 var client = new ClientWebSocket
@@ -77,19 +108,9 @@ namespace UniWebSocket
             });
         }
 
-        public Uri Url
-        {
-            get => _url;
-            set
-            {
-                if (!ValidationUtils.ValidateInput(value))
-                {
-                    throw new WebSocketBadInputException($"Input url is null. Please correct it.");
-                }
-
-                _url = value;
-            }
-        }
+        public WebSocket NativeSocket => _socket;
+        public ClientWebSocket NativeClient => _socket as ClientWebSocket;
+        public bool IsClientConnected => _socket != null && _socket.State == WebSocketState.Open;
 
         public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
 
@@ -111,36 +132,6 @@ namespace UniWebSocket
         public IObservable<WebSocketExceptionDetail> ErrorHappened => _exceptionSubject.AsObservable();
 
         /// <summary>
-        /// Get or set the name of the current websocket client instance.
-        /// For logging purpose (in case you use more parallel websocket clients and want to distinguish between them)
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// Returns true if ConnectAndStartListening() method was called at least once. False if not started or disposed
-        /// </summary>
-        public bool IsStarted { get; private set; }
-
-        /// <summary>
-        /// Returns true if client is running and connected to the server
-        /// </summary>
-        public bool IsRunning { get; private set; }
-
-        public bool Disposed { get; private set; }
-
-        public bool IsClientConnected => _client != null && _client.State == WebSocketState.Open;
-
-        public Encoding MessageEncoding
-        {
-            get => _messageEncoding ?? Encoding.UTF8;
-            set => _messageEncoding = value;
-        }
-
-        public ClientWebSocket NativeClient => GetNativeClient(_client);
-
-        public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
-
-        /// <summary>
         /// Start listening to the websocket stream on the background thread
         /// </summary>
         public async Task<bool> ConnectAndStartListening()
@@ -159,22 +150,15 @@ namespace UniWebSocket
 
             IsStarted = true;
 
-            _cancellationCurrentJobs = new CancellationTokenSource();
-            _cancellationAllJobs = new CancellationTokenSource();
-
             _logger?.Log(FormatLogMessage("Starting..."));
-            var connectionTask = StartClient(_url, _cancellationCurrentJobs.Token).ConfigureAwait(false);
+            var connectionTask = ConnectAndStartListeningInternal(Url, _cancellationCurrentJobs.Token).ConfigureAwait(false);
 
             StartBackgroundThreadForSendingText();
             StartBackgroundThreadForSendingBinary();
 
-            await connectionTask;
-            return true;
+            return await connectionTask;
         }
 
-        /// <summary>
-        /// Terminate the websocket connection and cleanup everything
-        /// </summary>
         public void Dispose()
         {
             if (Disposed)
@@ -190,8 +174,8 @@ namespace UniWebSocket
                 _cancellationAllJobs?.Cancel();
                 _cancellationCurrentJobs?.Cancel();
 
-                _client?.Abort();
-                _client?.Dispose();
+                _socket?.Abort();
+                _socket?.Dispose();
 
                 _cancellationAllJobs?.Dispose();
                 _cancellationCurrentJobs?.Dispose();
@@ -207,9 +191,11 @@ namespace UniWebSocket
                 _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
                 _exceptionSubject?.OnNext(new WebSocketExceptionDetail(e, ErrorType.Dispose));
             }
-
-            IsRunning = false;
-            IsStarted = false;
+            finally
+            {
+                IsRunning = false;
+                IsStarted = false;
+            }
         }
 
         /// <summary>
@@ -218,10 +204,12 @@ namespace UniWebSocket
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
         /// <param name="dispose"></param>
-        /// <returns></returns>
+        /// <returns>true is normal.
+        /// If false, there is a problem and even if dispose = true, it will not be automatically disposed.
+        /// </returns>
         public async Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose = true)
         {
-            if (_client == null || IsRunning == false)
+            if (_socket == null || IsRunning == false)
             {
                 IsStarted = false;
                 IsRunning = false;
@@ -230,25 +218,30 @@ namespace UniWebSocket
 
             try
             {
-                await _client.CloseAsync(status, statusDescription, _cancellationCurrentJobs?.Token ?? CancellationToken.None).ConfigureAwait(false);
+                await _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token)
+                    .ConfigureAwait(false);
 
                 if (dispose)
                 {
                     this.Dispose();
                 }
+
+                return true;
             }
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
                 _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Close));
+                return false;
             }
-
-            IsStarted = false;
-            IsRunning = false;
-            return true;
+            finally
+            {
+                IsStarted = false;
+                IsRunning = false;
+            }
         }
 
-        private static Func<Uri, CancellationToken, Task<WebSocket>> GetConnectedClientFactory(Func<ClientWebSocket> clientFactory)
+        private static Func<Uri, CancellationToken, Task<WebSocket>> MakeConnectedClientFactory(Func<ClientWebSocket> clientFactory)
         {
             if (clientFactory == null)
             {
@@ -263,21 +256,23 @@ namespace UniWebSocket
             });
         }
 
-        private async Task StartClient(Uri uri, CancellationToken token)
+        private async Task<bool> ConnectAndStartListeningInternal(Uri uri, CancellationToken token)
         {
             try
             {
-                _client = await _connectionFactory(uri, token).ConfigureAwait(false);
+                _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
                 IsRunning = true;
 #pragma warning disable 4014
-                Listen(_client, token);
+                Listen(_socket, token);
 #pragma warning restore 4014
                 LastReceivedTime = DateTime.UtcNow;
+                return true;
             }
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Exception while connecting. detail: {e.Message}"));
                 _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Start));
+                return false;
             }
         }
 
@@ -344,27 +339,9 @@ namespace UniWebSocket
             }
         }
 
-        private static ClientWebSocket GetNativeClient(WebSocket client)
-        {
-            if (client == null)
-            {
-                return null;
-            }
-
-            var nativeClient = client as ClientWebSocket;
-            if (nativeClient == null)
-            {
-                throw new Exceptions.WebSocketException(
-                    "Cannot cast 'WebSocket' client to 'ClientWebSocket', provide correct type via factory or don't use this property at all.");
-            }
-
-            return nativeClient;
-        }
-
         private string FormatLogMessage(string msg)
         {
-            var name = Name ?? "CLIENT";
-            return $"[WEBSOCKET {name}] {msg}";
+            return $"[WEBSOCKET {Name}] {msg}";
         }
     }
 }

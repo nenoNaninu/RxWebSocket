@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using UniWebSocket.Exceptions;
@@ -9,9 +8,6 @@ namespace UniWebSocket
 {
     public partial class WebSocketClient
     {
-        private readonly BlockingCollection<string> _messagesTextToSendQueue = new BlockingCollection<string>();
-        private readonly BlockingCollection<byte[]> _messagesBinaryToSendQueue = new BlockingCollection<byte[]>();
-
         /// <summary>
         /// Send text message to the websocket channel. 
         /// It inserts the message to the queue and actual sending is done on an other thread
@@ -184,7 +180,7 @@ namespace UniWebSocket
 
             var buffer = MessageEncoding.GetBytes(message);
 
-            await _client
+            await _socket
                 .SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
                 .ConfigureAwait(false);
         }
@@ -207,7 +203,7 @@ namespace UniWebSocket
 
             _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Length}"));
 
-            await _client
+            await _socket
                 .SendAsync(new ArraySegment<byte>(message), WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
                 .ConfigureAwait(false);
         }

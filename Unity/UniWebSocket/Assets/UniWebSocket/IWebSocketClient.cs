@@ -8,9 +8,9 @@ namespace UniWebSocket
     public interface IWebSocketClient : IDisposable
     {
         /// <summary>
-        /// Get or set target websocket url
+        /// target websocket url
         /// </summary>
-        Uri Url { get; set; }
+        Uri Url { get; }
 
         IObservable<ResponseMessage> MessageReceived { get; }
 
@@ -48,6 +48,11 @@ namespace UniWebSocket
         /// Returns currently used native websocket client.
         /// </summary>
         ClientWebSocket NativeClient { get; }
+        
+        /// <summary>
+        /// Returns currently used native websocket.
+        /// </summary>
+        WebSocket NativeSocket { get; }
 
         /// <summary>
         /// Sets used encoding for sending and receiving text messages.
