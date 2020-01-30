@@ -67,10 +67,9 @@ namespace UniWebSocket
 
         /// <summary>
         /// Stop/close websocket connection with custom close code.
-        /// Method could throw exceptions. 
         /// </summary>
-        /// <returns>Returns true if close was initiated successfully</returns>
-        Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose = false);
+        /// <returns>Returns true if close was successfully</returns>
+        Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose);
 
         /// <summary>
         /// Send message to the websocket channel. 
