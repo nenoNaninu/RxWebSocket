@@ -159,6 +159,26 @@ namespace UniWebSocket
             return await connectionTask;
         }
 
+        private async Task<bool> ConnectAndStartListeningInternal(Uri uri, CancellationToken token)
+        {
+            try
+            {
+                _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
+                IsRunning = true;
+#pragma warning disable 4014
+                Listen(_socket, token);
+#pragma warning restore 4014
+                LastReceivedTime = DateTime.UtcNow;
+                return true;
+            }
+            catch (Exception e)
+            {
+                _logger?.Error(e, FormatLogMessage($"Exception while connecting. detail: {e.Message}"));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Start));
+                return false;
+            }
+        }
+
         public void Dispose()
         {
             if (Disposed)
@@ -256,26 +276,6 @@ namespace UniWebSocket
             });
         }
 
-        private async Task<bool> ConnectAndStartListeningInternal(Uri uri, CancellationToken token)
-        {
-            try
-            {
-                _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
-                IsRunning = true;
-#pragma warning disable 4014
-                Listen(_socket, token);
-#pragma warning restore 4014
-                LastReceivedTime = DateTime.UtcNow;
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger?.Error(e, FormatLogMessage($"Exception while connecting. detail: {e.Message}"));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Start));
-                return false;
-            }
-        }
-
         private async Task Listen(WebSocket client, CancellationToken token)
         {
             try
@@ -307,7 +307,7 @@ namespace UniWebSocket
                     }
 
                     var dstArray = new byte[offsetCount];
-                    Array.Copy(_memoryPool, dstArray, offsetCount);
+                    Buffer.BlockCopy(_memoryPool, 0, dstArray, 0, offsetCount);
 
                     ResponseMessage message = result.MessageType == WebSocketMessageType.Text
                         ? ResponseMessage.TextMessage(MessageEncoding.GetString(dstArray))
