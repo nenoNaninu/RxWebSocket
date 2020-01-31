@@ -37,8 +37,7 @@ namespace UniWebSocket
         public Uri Url { get; }
 
         /// <summary>
-        /// Get or set the name of the current websocket client instance.
-        /// For logging purpose (in case you use more parallel websocket clients and want to distinguish between them)
+        /// For logging purpose.
         /// </summary>
         public string Name { get; set; } = "CLIENT";
 
@@ -47,12 +46,7 @@ namespace UniWebSocket
         /// </summary>
         public bool IsStarted { get; private set; }
 
-        /// <summary>
-        /// Returns true if client is running and connected to the server
-        /// </summary>
-        public bool IsRunning { get; private set; }
-
-        public bool Disposed { get; private set; }
+        public bool IsDisposed { get; private set; }
 
         public Encoding MessageEncoding { get; set; } = Encoding.UTF8;
 
@@ -110,7 +104,10 @@ namespace UniWebSocket
 
         public WebSocket NativeSocket => _socket;
         public ClientWebSocket NativeClient => _socket as ClientWebSocket;
-        public bool IsClientConnected => _socket != null && _socket.State == WebSocketState.Open;
+        public bool IsConnected => _socket != null && _socket.State == WebSocketState.Open;
+        public bool IsClosed => _socket != null && _socket.State == WebSocketState.Closed;
+
+        public WebSocketState WebSocketState => _socket?.State ?? WebSocketState.None;
 
         public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
 
@@ -142,7 +139,7 @@ namespace UniWebSocket
                 return false;
             }
 
-            if (Disposed)
+            if (IsDisposed)
             {
                 _logger?.Log(FormatLogMessage("Client already disposed, ignoring.."));
                 return false;
@@ -164,7 +161,6 @@ namespace UniWebSocket
             try
             {
                 _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
-                IsRunning = true;
 #pragma warning disable 4014
                 Listen(_socket, token);
 #pragma warning restore 4014
@@ -181,12 +177,12 @@ namespace UniWebSocket
 
         public void Dispose()
         {
-            if (Disposed)
+            if (IsDisposed)
             {
                 return;
             }
 
-            Disposed = true;
+            IsDisposed = true;
             _logger?.Log(FormatLogMessage("Disposing..."));
 
             try
@@ -213,7 +209,6 @@ namespace UniWebSocket
             }
             finally
             {
-                IsRunning = false;
                 IsStarted = false;
             }
         }
@@ -229,17 +224,15 @@ namespace UniWebSocket
         /// </returns>
         public async Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose = true)
         {
-            if (_socket == null || IsRunning == false)
+            if (_socket == null || IsConnected == false)
             {
                 IsStarted = false;
-                IsRunning = false;
                 return false;
             }
 
             try
             {
-                await _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token)
-                    .ConfigureAwait(false);
+                await _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token).ConfigureAwait(false);
 
                 if (dispose)
                 {
@@ -257,7 +250,6 @@ namespace UniWebSocket
             finally
             {
                 IsStarted = false;
-                IsRunning = false;
             }
         }
 

@@ -97,7 +97,7 @@ namespace UniWebSocket
             }
             catch (Exception e)
             {
-                if (_cancellationAllJobs.IsCancellationRequested || Disposed)
+                if (_cancellationAllJobs.IsCancellationRequested || IsDisposed)
                 {
                     // disposing/canceling, do nothing and exit
                     return;
@@ -135,7 +135,7 @@ namespace UniWebSocket
             }
             catch (Exception e)
             {
-                if (_cancellationAllJobs.IsCancellationRequested || Disposed)
+                if (_cancellationAllJobs.IsCancellationRequested || IsDisposed)
                 {
                     // disposing/canceling, do nothing and exit
                     return;
@@ -170,7 +170,7 @@ namespace UniWebSocket
 
         private async Task SendInternal(string message)
         {
-            if (!IsClientConnected)
+            if (!IsConnected)
             {
                 _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
                 return;
@@ -195,7 +195,7 @@ namespace UniWebSocket
 
         private async Task SendInternal(byte[] message)
         {
-            if (!IsClientConnected)
+            if (!IsConnected)
             {
                 _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Length}"));
                 return;

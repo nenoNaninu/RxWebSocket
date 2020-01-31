@@ -29,8 +29,7 @@ namespace UniWebSocket
         IObservable<WebSocketExceptionDetail> ErrorHappened { get; }
 
         /// <summary>
-        /// Get or set the name of the current websocket client instance.
-        /// For logging purpose (in case you use more parallel websocket clients and want to distinguish between them)
+        /// For logging purpose.
         /// </summary>
         string Name { get; set; }
 
@@ -38,11 +37,17 @@ namespace UniWebSocket
         /// Returns true if ConnectAndStartListening() method was called at least once. False if not started or disposed
         /// </summary>
         bool IsStarted { get; }
-
+        
+        bool IsConnected { get; }
+        
+        bool IsClosed { get; }
+        
         /// <summary>
-        /// Returns true if client is running and connected to the server
+        /// Returns true if the client is already disposed.
         /// </summary>
-        bool IsRunning { get; }
+        bool IsDisposed { get; }
+        
+        WebSocketState WebSocketState { get; }
 
         /// <summary>
         /// Returns currently used native websocket client.
