@@ -104,6 +104,7 @@ namespace UniWebSocket
 
         public WebSocket NativeSocket => _socket;
         public ClientWebSocket NativeClient => _socket as ClientWebSocket;
+        
         public bool IsConnected => _socket != null && _socket.State == WebSocketState.Open;
         public bool IsClosed => _socket != null && _socket.State == WebSocketState.Closed;
 
