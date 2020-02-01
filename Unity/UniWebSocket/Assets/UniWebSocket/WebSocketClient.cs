@@ -20,7 +20,7 @@ namespace UniWebSocket
         private readonly AsyncLock _locker = new AsyncLock();
         private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
 
-        private readonly byte[] _memoryPool = new byte[1024 * 512];
+        private readonly MemoryPool _memoryPool;
 
         private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
         private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
@@ -42,7 +42,8 @@ namespace UniWebSocket
         public string Name { get; set; } = "CLIENT";
 
         /// <summary>
-        /// Returns true if ConnectAndStartListening() method was called at least once. False if not started or disposed
+        /// Returns true if ConnectAndStartListening() method was already called.
+        /// Returns False if ConnectAndStartListening is not called or already called Dispose().
         /// </summary>
         public bool IsStarted { get; private set; }
 
@@ -55,35 +56,55 @@ namespace UniWebSocket
         #endregion
 
         /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="maxReceivedMessageSize">Maximum array(byte[]) length of received data. default is 512*1024 byte(512KB)</param>
+        /// <param name="initialMemorySize">
+        /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
+        /// if lack of memory, memory pool is increase so allocation occur. </param>
+        /// <param name="receiveBufferSize">
+        /// if use ClientWebSocketOptions.SetBuffer(int receiveBufferSize, int sendBufferSize) in clientFactory, set this argument.
+        /// default is 4 * 1024.
+        /// </param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, int maxReceivedMessageSize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectedClientFactory(clientFactory))
+        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger = null,
+            Func<ClientWebSocket> clientFactory = null)
+            : this(url, MakeConnectionFactory(clientFactory))
         {
             _logger = logger;
-            _memoryPool = new byte[maxReceivedMessageSize];
+            _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
+        }
+
+        /// <param name="url">Target websocket url (wss://)</param>
+        /// <param name="initialMemorySize">
+        /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
+        /// if lack of memory, memory pool is increase so allocation occur. </param>
+        /// <param name="logger"></param>
+        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
+        public WebSocketClient(Uri url, int initialMemorySize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, MakeConnectionFactory(clientFactory))
+        {
+            _logger = logger;
+            _memoryPool = new MemoryPool(initialMemorySize, 4 * 1024, logger);
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectedClientFactory(clientFactory))
+            : this(url, MakeConnectionFactory(clientFactory))
         {
             _logger = logger;
+            _memoryPool = new MemoryPool(64 * 1024, 4 * 1024, logger);
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectedClientFactory(clientFactory))
+            : this(url, MakeConnectionFactory(clientFactory))
         {
+            _memoryPool = new MemoryPool(64 * 1024, 4 * 1024);
         }
 
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected. Use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        private WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
@@ -100,6 +121,61 @@ namespace UniWebSocket
                 await client.ConnectAsync(uri, token).ConfigureAwait(false);
                 return client;
             });
+        }
+
+        /// <param name="url">Target websocket url (wss://)</param>
+        /// <param name="initialMemorySize">
+        /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
+        /// if lack of memory, memory pool is increase so allocation occur. </param>
+        /// <param name="logger"></param>
+        /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected.</param>
+        public WebSocketClient(Uri url, int initialMemorySize, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        {
+            if (!ValidationUtils.ValidateInput(url))
+            {
+                throw new WebSocketBadInputException($"url is null. Please correct it.");
+            }
+
+            if (!ValidationUtils.ValidateInput(connectionFactory))
+            {
+                throw new WebSocketBadInputException($"connectionFactory is null. Please correct it.");
+            }
+
+            _logger = logger;
+            _memoryPool = new MemoryPool(initialMemorySize, 4 * 1024, logger);
+
+            Url = url;
+            _connectionFactory = connectionFactory;
+        }
+
+        /// <param name="url">Target websocket url (wss://)</param>
+        /// <param name="initialMemorySize">
+        /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
+        /// if lack of memory, memory pool is increase so allocation occur. </param>
+        /// <param name="receiveBufferSize">
+        /// if use ClientWebSocketOptions.SetBuffer(int receiveBufferSize, int sendBufferSize) in connectionFactory, set this argument.
+        /// default is 4 * 1024.
+        /// </param>
+        /// <param name="logger"></param>
+        /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected.</param>
+        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger,
+            Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        {
+            if (!ValidationUtils.ValidateInput(url))
+            {
+                throw new WebSocketBadInputException($"url is null. Please correct it.");
+            }
+
+            if (!ValidationUtils.ValidateInput(connectionFactory))
+            {
+                throw new WebSocketBadInputException($"connectionFactory is null. Please correct it.");
+            }
+
+            _logger = logger;
+            _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
+
+            Url = url;
+            _connectionFactory = connectionFactory;
         }
 
         public WebSocket NativeSocket => _socket;
@@ -127,11 +203,12 @@ namespace UniWebSocket
         /// </summary>
         public IObservable<WebSocketCloseStatus> DisconnectionHappened => _disconnectedSubject.AsObservable();
 
-        public IObservable<WebSocketExceptionDetail> ErrorHappened => _exceptionSubject.AsObservable();
+        public IObservable<WebSocketExceptionDetail> ExceptionHappened => _exceptionSubject.AsObservable();
 
         /// <summary>
-        /// Start listening to the websocket stream on the background thread
+        /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
+        /// <returns>return true if successful</returns>
         public async Task<bool> ConnectAndStartListening()
         {
             if (IsStarted)
@@ -254,7 +331,7 @@ namespace UniWebSocket
             }
         }
 
-        private static Func<Uri, CancellationToken, Task<WebSocket>> MakeConnectedClientFactory(Func<ClientWebSocket> clientFactory)
+        private static Func<Uri, CancellationToken, Task<WebSocket>> MakeConnectionFactory(Func<ClientWebSocket> clientFactory)
         {
             if (clientFactory == null)
             {
@@ -275,17 +352,17 @@ namespace UniWebSocket
             {
                 do
                 {
-                    var arraySegment = new ArraySegment<byte>(_memoryPool);
-                    int offsetCount = 0;
+                    _memoryPool.Offset = 0;
+                    var memorySegment = _memoryPool.SliceFromOffset();
 
                     WebSocketReceiveResult result;
                     do
                     {
-                        result = await client.ReceiveAsync(arraySegment, token).ConfigureAwait(false);
+                        result = await client.ReceiveAsync(memorySegment, token).ConfigureAwait(false);
                         if (result.MessageType != WebSocketMessageType.Close)
                         {
-                            offsetCount += result.Count;
-                            arraySegment = new ArraySegment<byte>(_memoryPool, offsetCount, _memoryPool.Length - offsetCount);
+                            _memoryPool.Offset += result.Count;
+                            memorySegment = _memoryPool.SliceFromOffset();
                         }
                     } while (!result.EndOfMessage);
 
@@ -299,8 +376,7 @@ namespace UniWebSocket
                         return;
                     }
 
-                    var dstArray = new byte[offsetCount];
-                    Buffer.BlockCopy(_memoryPool, 0, dstArray, 0, offsetCount);
+                    var dstArray = _memoryPool.ToArray();
 
                     ResponseMessage message = result.MessageType == WebSocketMessageType.Text
                         ? ResponseMessage.TextMessage(MessageEncoding.GetString(dstArray))

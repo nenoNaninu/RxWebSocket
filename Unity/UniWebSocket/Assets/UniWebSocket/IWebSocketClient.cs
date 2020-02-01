@@ -22,11 +22,8 @@ namespace UniWebSocket
         /// Stream for disconnection event (triggered after the connection was lost) 
         /// </summary>
         IObservable<WebSocketCloseStatus> DisconnectionHappened { get; }
-
-        /// <summary>
-        /// Stream for exception event
-        /// </summary>
-        IObservable<WebSocketExceptionDetail> ErrorHappened { get; }
+        
+        IObservable<WebSocketExceptionDetail> ExceptionHappened { get; }
 
         /// <summary>
         /// For logging purpose.
@@ -34,26 +31,27 @@ namespace UniWebSocket
         string Name { get; set; }
 
         /// <summary>
-        /// Returns true if ConnectAndStartListening() method was called at least once. False if not started or disposed
+        /// Returns true if ConnectAndStartListening() method was already called.
+        /// Returns False if ConnectAndStartListening is not called or already call Dispose().
         /// </summary>
         bool IsStarted { get; }
-        
+
         bool IsConnected { get; }
-        
+
         bool IsClosed { get; }
-        
+
         /// <summary>
         /// Returns true if the client is already disposed.
         /// </summary>
         bool IsDisposed { get; }
-        
+
         WebSocketState WebSocketState { get; }
 
         /// <summary>
         /// Returns currently used native websocket client.
         /// </summary>
         ClientWebSocket NativeClient { get; }
-        
+
         /// <summary>
         /// Returns currently used native websocket.
         /// </summary>
@@ -71,35 +69,35 @@ namespace UniWebSocket
         Task<bool> ConnectAndStartListening();
 
         /// <summary>
-        /// Stop/close websocket connection with custom close code.
+        /// close websocket connection.
         /// </summary>
-        /// <returns>Returns true if close was successfully</returns>
+        /// <returns>Returns true if close was successful</returns>
         Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose);
 
         /// <summary>
         /// Send message to the websocket channel. 
-        /// It inserts the message to the queue and actual sending is done on an other thread
+        /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Message to be sent</param>
         void Send(string message);
 
         /// <summary>
         /// Send binary message to the websocket channel. 
-        /// It inserts the message to the queue and actual sending is done on an other thread
+        /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         void Send(byte[] message);
 
         /// <summary>
         /// Send message to the websocket channel. 
-        /// It doesn't use a sending queue
+        /// It doesn't use a queue
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(string message);
 
         /// <summary>
         /// Send binary message to the websocket channel. 
-        /// It doesn't use a sending queue, 
+        /// It doesn't use a queue, 
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(byte[] message);

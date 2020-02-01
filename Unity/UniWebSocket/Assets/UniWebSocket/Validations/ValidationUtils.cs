@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace UniWebSocket.Validations
 {
@@ -25,8 +26,7 @@ namespace UniWebSocket.Validations
         /// returns false for bad input.
         /// </summary>
         /// <param name="value">The value to be validated</param>
-        /// <param name="name">Input parameter name</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ValidateInput<T>(T value) => !Equals(value, default(T));
+        public static bool ValidateInput<T>(T value) => !EqualityComparer<T>.Default.Equals(value, default);
     }
 }

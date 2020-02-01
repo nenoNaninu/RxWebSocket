@@ -10,7 +10,7 @@ namespace UniWebSocket
     {
         /// <summary>
         /// Send text message to the websocket channel. 
-        /// It inserts the message to the queue and actual sending is done on an other thread
+        /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Text message to be sent</param>
         public void Send(string message)
@@ -26,7 +26,7 @@ namespace UniWebSocket
 
         /// <summary>
         /// Send binary message to the websocket channel. 
-        /// It inserts the message to the queue and actual sending is done on an other thread
+        /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         public void Send(byte[] message)
@@ -42,7 +42,7 @@ namespace UniWebSocket
 
         /// <summary>
         /// Send text message to the websocket channel. 
-        /// It doesn't use a sending queue.
+        /// It doesn't use a queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(string message)
@@ -57,7 +57,7 @@ namespace UniWebSocket
 
         /// <summary>
         /// Send binary message to the websocket channel. 
-        /// It doesn't use a sending queue.
+        /// It doesn't use a queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(byte[] message)

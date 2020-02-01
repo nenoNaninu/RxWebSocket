@@ -40,7 +40,7 @@ namespace UniWebSocket
             _context.Post(Debug.LogWarning, message);
         }
 
-        public class ErrorChunk
+        private class ErrorChunk
         {
             public string Message { get; }
             public Exception Exception { get; }
