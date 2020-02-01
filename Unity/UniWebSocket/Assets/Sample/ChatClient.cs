@@ -33,6 +33,14 @@ namespace UniWebSocket.Sample
                 .Do(x => _logger?.Log("DisconnectionHappened.Do()..." + x.ToString()))
                 .Subscribe(x => _errorSubject.OnNext(x));
 
+            _webSocketClient.ExceptionHappened
+                .Subscribe(x =>
+                {
+                    _logger?.Log("exception stream...");
+                    _logger?.Log(x.ErrorType.ToString());
+                    _logger?.Log(x.Exception.ToString());
+                });
+
             await _webSocketClient.ConnectAndStartListening();
             _webSocketClient.Send(Encoding.UTF8.GetBytes(name));
         }
