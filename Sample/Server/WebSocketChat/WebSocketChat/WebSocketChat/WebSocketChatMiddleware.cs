@@ -64,7 +64,9 @@ namespace WebSocketChat
 
                 ms.Seek(0, SeekOrigin.Begin);
 
-                handleMessage(result, ms.ToArray());
+                var receiveResult = ms.ToArray();
+                Console.WriteLine("receiveResut: " + receiveResult.Length);
+                handleMessage(result, receiveResult);
             }
         }
     }

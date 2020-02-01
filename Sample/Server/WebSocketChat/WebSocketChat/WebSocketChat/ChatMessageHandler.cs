@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading.Tasks;
 using Utf8Json;
+using System;
 
 namespace WebSocketChat
 {
@@ -24,6 +25,7 @@ namespace WebSocketChat
         {
             var message = JsonSerializer.Serialize(new ChatMessage(socket.Name, Encoding.UTF8.GetString(buffer)));
 
+            Console.WriteLine($"message result {message.Length}");
             await SendMessageToAllAsync(message);
         }
         
