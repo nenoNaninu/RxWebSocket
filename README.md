@@ -2,37 +2,39 @@
 UniWebSocket is a WebSocket client for Unity. Since Unity 2018 supports .NET Standard 2.0, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) can be used. Therefore, WebSocket protocol can be used without an extra library. However, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) is very cumbersome.
 UniWebSocket is a wrapper of ClientWebSocket for easy handling. UniWebSocket was created with reference to the [websocket-client](https://github.com/Marfusios/websocket-client) (Released under [the MIT License](https://github.com/Marfusios/websocket-client/blob/master/LICENSE)).
 
+# Download
+[Releases page](https://github.com/nenoNaninu/UniWebSocket/releases)
 
-# Requirements
-- UniRx
-[This package](https://github.com/nenoNaninu/UniWebSocket/releases) requires [UniRx](https://github.com/neuecc/UniRx/releases), so download and import it into your project.
+# Requirements 
+- [UniRx](https://github.com/neuecc/UniRx/releases)
+
 # How to use
 
 ```csharp
-var webSocketClient = new WebSocketClient(new Uri("wss://~~~"));
+var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
 
 //binary receive
 webSocketClient.MessageReceived
     .Where(x => x.MessageType == WebSocketMessageType.Binary)
     .Select(x => x.Binary)
     .Subscribe(x => DoSometine(x));
-//↑↓same
+
+//The above shortcut
 webSocketClient.BinaryMessageReceived
     .Subscribe(x => DoSomething(x));
     
-//text receive
 webSocketClient.TextMessageReceived
     .Subscribe(x => DoSomething(x));
 
 webSocketClient.DisconnectionHappened
     .Subscribe(x => DoSomething(x));
 
-webSocketClient.ErrorHappened
+webSocketClient.ExceptionHappened
     .Subscribe(x => DoSomething(x));
 
 //start connect and start listening in background thread.
 //await until websocket can connect.
-await webSocketClient.ConnectAndStartListening();
+var success = await webSocketClient.ConnectAndStartListening();
 
 //send bin
 byte[] array = MakeSomeArray();
@@ -64,9 +66,11 @@ var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
 
 var webSocketClient = new WebSocketClient(url, factory);
 ```
-The maximum size of messages to be received is set to 512KB by default. If you need more, set it with the following constructor.
-```csharp=
-public WebSocketClient(Uri url, int maxReceivedMessageSize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
+The default received memory pool is set to 64KB.
+if lack of memory, memory pool is automatically increase so allocation occur.
+If it is known that a large size will come, it is advantageous to set a large memory pool in the following constructor.
+```csharp
+public WebSocketClient(Uri url, int initialMemorySize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
 ```
 
 ## Notice
