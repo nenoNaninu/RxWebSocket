@@ -128,7 +128,7 @@ namespace UniWebSocket
         /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
         /// if lack of memory, memory pool is increase so allocation occur. </param>
         /// <param name="logger"></param>
-        /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected.</param>
+        /// <param name="connectionFactory">An optional factory for creating and connecting native Websockets. The method should return connected websocket.</param>
         public WebSocketClient(Uri url, int initialMemorySize, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
@@ -157,7 +157,7 @@ namespace UniWebSocket
         /// default is 4 * 1024.
         /// </param>
         /// <param name="logger"></param>
-        /// <param name="connectionFactory">Optional factory for native creating and connecting to a websocket. The method should return a <see cref="WebSocket"/> which is connected.</param>
+        /// <param name="connectionFactory">An optional factory for creating and connecting native Websockets. The method should return connected websocket.</param>
         public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger,
             Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {

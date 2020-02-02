@@ -34,7 +34,7 @@ webSocketClient.ExceptionHappened
 
 //start connect and start listening in background thread.
 //await until websocket can connect.
-var success = await webSocketClient.ConnectAndStartListening();
+bool success = await webSocketClient.ConnectAndStartListening();
 
 //send bin
 byte[] array = MakeSomeArray();
