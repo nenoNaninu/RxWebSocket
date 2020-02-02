@@ -54,6 +54,37 @@ namespace UniWebSocket
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
         #endregion
+        
+        /// <param name="url">Target websocket url (wss://)</param>
+        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
+        public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
+            : this(url, MakeConnectionFactory(clientFactory))
+        {
+            _memoryPool = new MemoryPool(64 * 1024, 4 * 1024);
+        }
+        
+        /// <param name="url">Target websocket url (wss://)</param>
+        /// <param name="logger"></param>
+        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
+        public WebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
+            : this(url, MakeConnectionFactory(clientFactory))
+        {
+            _logger = logger;
+            _memoryPool = new MemoryPool(64 * 1024, 4 * 1024, logger);
+        }
+        
+        /// <param name="url">Target websocket url (wss://)</param>
+        /// <param name="initialMemorySize">
+        /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
+        /// if lack of memory, memory pool is increase so allocation occur. </param>
+        /// <param name="logger"></param>
+        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
+        public WebSocketClient(Uri url, int initialMemorySize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, MakeConnectionFactory(clientFactory))
+        {
+            _logger = logger;
+            _memoryPool = new MemoryPool(initialMemorySize, 4 * 1024, logger);
+        }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="initialMemorySize">
@@ -71,38 +102,7 @@ namespace UniWebSocket
             _logger = logger;
             _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
         }
-
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="initialMemorySize">
-        /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
-        /// if lack of memory, memory pool is increase so allocation occur. </param>
-        /// <param name="logger"></param>
-        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, int initialMemorySize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectionFactory(clientFactory))
-        {
-            _logger = logger;
-            _memoryPool = new MemoryPool(initialMemorySize, 4 * 1024, logger);
-        }
-
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="logger"></param>
-        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectionFactory(clientFactory))
-        {
-            _logger = logger;
-            _memoryPool = new MemoryPool(64 * 1024, 4 * 1024, logger);
-        }
-
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectionFactory(clientFactory))
-        {
-            _memoryPool = new MemoryPool(64 * 1024, 4 * 1024);
-        }
-
+        
         private WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
