@@ -65,8 +65,7 @@ namespace UniWebSocket
         /// </param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger = null,
-            Func<ClientWebSocket> clientFactory = null)
+        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
             : this(url, MakeConnectionFactory(clientFactory))
         {
             _logger = logger;
@@ -158,8 +157,7 @@ namespace UniWebSocket
         /// </param>
         /// <param name="logger"></param>
         /// <param name="connectionFactory">An optional factory for creating and connecting native Websockets. The method should return connected websocket.</param>
-        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger,
-            Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
@@ -199,7 +197,7 @@ namespace UniWebSocket
             .Publish().RefCount();
 
         /// <summary>
-        /// Stream for disconnection event (triggered after the connection was lost) 
+        /// Triggered after the connection was lost.
         /// </summary>
         public IObservable<WebSocketCloseStatus> DisconnectionHappened => _disconnectedSubject.AsObservable();
 
