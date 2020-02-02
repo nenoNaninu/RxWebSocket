@@ -8,7 +8,7 @@ namespace UniWebSocket
     public interface IWebSocketClient : IDisposable
     {
         /// <summary>
-        /// target websocket url
+        /// Target websocket url
         /// </summary>
         Uri Url { get; }
 
@@ -19,7 +19,7 @@ namespace UniWebSocket
         IObservable<string> TextMessageReceived { get; }
 
         /// <summary>
-        /// Stream for disconnection event (triggered after the connection was lost) 
+        /// Triggered after the connection was lost.
         /// </summary>
         IObservable<WebSocketCloseStatus> DisconnectionHappened { get; }
         
