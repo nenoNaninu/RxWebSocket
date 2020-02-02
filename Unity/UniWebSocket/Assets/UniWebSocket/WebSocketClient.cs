@@ -16,12 +16,13 @@ namespace UniWebSocket
         #region Member variable with state.
 
         private readonly ILogger _logger;
-
-        private readonly AsyncLock _locker = new AsyncLock();
-        private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
-
+        
         private readonly MemoryPool _memoryPool;
 
+        private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
+        
+        private readonly AsyncLock _locker = new AsyncLock();
+        
         private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
         private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
@@ -102,7 +103,7 @@ namespace UniWebSocket
             _logger = logger;
             _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
         }
-        
+
         private WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
@@ -140,11 +141,11 @@ namespace UniWebSocket
                 throw new WebSocketBadInputException($"connectionFactory is null. Please correct it.");
             }
 
-            _logger = logger;
-            _memoryPool = new MemoryPool(initialMemorySize, 4 * 1024, logger);
-
             Url = url;
+
+            _logger = logger;
             _connectionFactory = connectionFactory;
+            _memoryPool = new MemoryPool(initialMemorySize, 4 * 1024, logger);
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
@@ -169,11 +170,11 @@ namespace UniWebSocket
                 throw new WebSocketBadInputException($"connectionFactory is null. Please correct it.");
             }
 
-            _logger = logger;
-            _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
-
             Url = url;
+
+            _logger = logger;
             _connectionFactory = connectionFactory;
+            _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
         }
 
         public WebSocket NativeSocket => _socket;
