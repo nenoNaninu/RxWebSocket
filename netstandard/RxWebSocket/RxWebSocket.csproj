@@ -12,12 +12,12 @@
     <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Rx, Reactive, WebSocket</PackageTags>
-    <PackageLicenseFile>$(license)</PackageLicenseFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" />
-    <None Include="..\..\LICENSE" Label="license/" />
+    <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)"/>
   </ItemGroup>
 
   <ItemGroup>
