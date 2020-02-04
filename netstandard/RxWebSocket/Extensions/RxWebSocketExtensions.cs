@@ -1,18 +1,18 @@
 using System;
 using Microsoft.Extensions.Logging;
 
-namespace RxWebSocket.Logging
+namespace RxWebSocket.Extensions
 {
-    public static class LogExtensions
+    public static class RxWebSocketExtensions
     {
-        public static ILogger AsWebSocketLogger(this Microsoft.Extensions.Logging.ILogger logger) => new Logger(logger);
+        public static RxWebSocket.Logging.ILogger AsWebSocketLogger(this ILogger logger) => new Logger(logger);
     }
 
     internal class Logger : RxWebSocket.Logging.ILogger
     {
-        private Microsoft.Extensions.Logging.ILogger _logger;
+        private ILogger _logger;
 
-        public Logger(Microsoft.Extensions.Logging.ILogger logger)
+        public Logger(ILogger logger)
         {
             _logger = logger;
         }
