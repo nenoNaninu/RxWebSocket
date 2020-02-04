@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
+    <Version>1.6.0</Version>
+
+    <!-- NuGet -->
+    <PackageId>RxWebSocket</PackageId>
+    <PackageVersion>$(Version)</PackageVersion>
+    <Authors>nenoNaninu</Authors>
+    <PackageProjectUrl>https://github.com/nenoNaninu/RxWebSocket</PackageProjectUrl>
+    <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Rx, Reactive, WebSocket</PackageTags>
+    <PackageLicenseFile>$(license)</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" />
+    <None Include="..\..\LICENSE" Label="license/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" Version="4.3.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
+  </ItemGroup>
+</Project>
