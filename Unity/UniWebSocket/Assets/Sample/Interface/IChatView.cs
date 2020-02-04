@@ -2,7 +2,7 @@ using System;
 using UniRx;
 using UnityEngine.UI;
 
-namespace UniWebSocket.Sample
+namespace RxWebSocket.Sample
 {
     public interface IChatView
     {

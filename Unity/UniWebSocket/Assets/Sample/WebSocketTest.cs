@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
+using RxWebSocket.Logging;
 using UniRx;
 using UnityEngine;
 
-namespace UniWebSocket.Sample
+namespace RxWebSocket.Sample
 {
     public class WebSocketTest : MonoBehaviour
     {

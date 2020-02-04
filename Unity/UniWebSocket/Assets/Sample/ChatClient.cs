@@ -2,10 +2,12 @@ using System;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
+using RxWebSocket;
+using RxWebSocket.Logging;
 using UniRx;
 using Utf8Json;
 
-namespace UniWebSocket.Sample
+namespace RxWebSocket.Sample
 {
     public class ChatClient : IChatClient
     {

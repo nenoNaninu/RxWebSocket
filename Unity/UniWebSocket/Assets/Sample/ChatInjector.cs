@@ -1,6 +1,7 @@
+using RxWebSocket.Logging;
 using UnityEngine;
 
-namespace UniWebSocket.Sample
+namespace RxWebSocket.Sample
 {
     public class ChatInjector : MonoBehaviour
     {

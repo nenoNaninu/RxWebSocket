@@ -1,7 +1,7 @@
 using System;
 using UniRx;
 
-namespace UniWebSocket.Sample
+namespace RxWebSocket.Sample
 {
     public interface IChatPresenter
     {

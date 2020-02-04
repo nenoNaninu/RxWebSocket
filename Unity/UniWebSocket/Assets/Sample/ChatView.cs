@@ -3,7 +3,7 @@ using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace UniWebSocket.Sample
+namespace RxWebSocket.Sample
 {
     public class ChatView : MonoBehaviour, IChatView
     {

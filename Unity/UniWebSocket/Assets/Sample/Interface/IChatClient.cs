@@ -1,9 +1,9 @@
 using System;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
-using UniWebSocket;
+using RxWebSocket;
 
-namespace UniWebSocket.Sample
+namespace RxWebSocket.Sample
 {
     public interface IChatClient : IDisposable
     {
