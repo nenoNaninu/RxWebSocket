@@ -5,20 +5,21 @@ RxWebSocket is a wrapper of ClientWebSocket for easy handling. RxWebSocket was c
 # Tested platform(Unity)
 - UWP
   -  ⭕️: IL2CPP
-     -  .NET standard2.0 & .NET 4.x
+     -  .NET Standard 2.0 & .NET 4.x
   -  ❌: .NET Backend
   
 - iOS
   - ⭕️: IL2CPP
+    - .NET Standard 2.0
 
 - Mac OSX Standalone
   -  ⭕️: Mono
-     -  .NET standard2.0 & .NET 4.x
+     -  .NET Standard.0 & .NET 4.x
   -  ❌: IL2CPP
 
 - Windows10 Standalone
   -  ⭕️: Mono
-     -  .NET standard2.0 & .NET 4.x
+     -  .NET Standard 2.0 & .NET 4.x
 
 # Download
 ## Unity
