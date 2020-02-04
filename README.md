@@ -1,11 +1,17 @@
-# UniWebSocket
-UniWebSocket is a WebSocket client for Unity. Since Unity 2018 supports .NET Standard 2.0, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) can be used. Therefore, WebSocket protocol can be used without an extra library. However, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) is very cumbersome.
-UniWebSocket is a wrapper of ClientWebSocket for easy handling. UniWebSocket was created with reference to the [websocket-client](https://github.com/Marfusios/websocket-client) (Released under [the MIT License](https://github.com/Marfusios/websocket-client/blob/master/LICENSE)).
+# RxWebSocket
+RxWebSocket is a WebSocket client for Unity and .NET Standard2.0/2.1. Since Unity 2018 supports .NET Standard 2.0, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) can be used. Therefore, WebSocket protocol can be used without an extra library. However, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) is very cumbersome.
+RxWebSocket is a wrapper of ClientWebSocket for easy handling. RxWebSocket was created with reference to the [websocket-client](https://github.com/Marfusios/websocket-client) (Released under [the MIT License](https://github.com/Marfusios/websocket-client/blob/master/LICENSE)).
 
 # Download
-[Releases page](https://github.com/nenoNaninu/UniWebSocket/releases)
+## Unity
+[Releases page](https://github.com/nenoNaninu/RxWebSocket/releases)
 
-# Requirements 
+## .NET Standard 2.0/2.1
+```
+dotnet add package RxWebSocket
+```
+
+# Requirements for Unity
 - [UniRx](https://github.com/neuecc/UniRx/releases)
 
 # How to use
