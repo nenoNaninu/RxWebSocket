@@ -2,6 +2,24 @@
 RxWebSocket is a WebSocket client for Unity and .NET Standard2.0/2.1. Since Unity 2018 supports .NET Standard 2.0, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) can be used. Therefore, WebSocket protocol can be used without an extra library. However, [ClientWebSocket](https://docs.microsoft.com/ja-jp/dotnet/api/system.net.websockets.clientwebsocket?view=netstandard-2.0) is very cumbersome.
 RxWebSocket is a wrapper of ClientWebSocket for easy handling. RxWebSocket was created with reference to the [websocket-client](https://github.com/Marfusios/websocket-client) (Released under [the MIT License](https://github.com/Marfusios/websocket-client/blob/master/LICENSE)).
 
+# Tested platform(Unity)
+- UWP
+  -  ⭕️: IL2CPP
+     -  .NET standard2.0 & .NET 4.x
+  -  ❌: .NET Backend
+  
+- iOS
+  - ⭕️: IL2CPP
+
+- Mac OSX Standalone
+  -  ⭕️: Mono
+     -  .NET standard2.0 & .NET 4.x
+  -  ❌: IL2CPP
+
+- Windows10 Standalone
+  -  ⭕️: Mono
+     -  .NET standard2.0 & .NET 4.x
+
 # Download
 ## Unity
 [Releases page](https://github.com/nenoNaninu/RxWebSocket/releases)
