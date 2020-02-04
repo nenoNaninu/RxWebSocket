@@ -94,7 +94,7 @@ webSocketClient.TextMessageReceived
 # Sample
 I prepared a simple chat app as a sample. When the server starts, connect to ```ws://ip:port/ws```.
 ## Unity 2018
-open [this scene](https://github.com/nenoNaninu/UniWebSocket/tree/master/Unity/UniWebSocket/Assets/Scenes) and run.
+open [this scene](https://github.com/nenoNaninu/RxWebSocket/tree/master/Unity/UniWebSocket/Assets/Scenes) and run.
 
 
 ## Server(C#/ ASP.NET Core3.0)
