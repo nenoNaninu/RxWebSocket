@@ -81,11 +81,11 @@ namespace RxWebSocket
         /// It doesn't use a queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        public async Task SendInstant(byte[] message)
+        public Task SendInstant(byte[] message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                await SendInternalSynchronized(new ArraySegment<byte>(message)).ConfigureAwait(false);
+                return SendInternalSynchronized(new ArraySegment<byte>(message));
             }
             else
             {
@@ -98,11 +98,11 @@ namespace RxWebSocket
         /// It doesn't use a queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        public async Task SendInstant(ArraySegment<byte> message)
+        public Task SendInstant(ArraySegment<byte> message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                await SendInternalSynchronized(message).ConfigureAwait(false);
+                return SendInternalSynchronized(message);
             }
             else
             {
