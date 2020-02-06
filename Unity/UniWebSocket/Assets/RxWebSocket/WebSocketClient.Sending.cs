@@ -64,16 +64,14 @@ namespace RxWebSocket
         /// It doesn't use a queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        public async Task SendInstant(string message)
+        public Task SendInstant(string message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                await SendInternalSynchronized(message).ConfigureAwait(false);
+                return SendInternalSynchronized(message);
             }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
-            }
+
+            throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
         }
 
         /// <summary>
@@ -87,10 +85,8 @@ namespace RxWebSocket
             {
                 return SendInternalSynchronized(new ArraySegment<byte>(message));
             }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
-            }
+
+            throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
         }
 
         /// <summary>
@@ -104,10 +100,8 @@ namespace RxWebSocket
             {
                 return SendInternalSynchronized(message);
             }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is 0 Count. Please correct it.");
-            }
+
+            throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is 0 Count. Please correct it.");
         }
 
         private async Task SendTextFromQueue()
