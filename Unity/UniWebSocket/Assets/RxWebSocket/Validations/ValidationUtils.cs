@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace RxWebSocket.Validations
@@ -21,6 +22,13 @@ namespace RxWebSocket.Validations
         /// <param name="value">The value to be validated</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateInput(byte[] value) => !value.IsNullOrEmpty();
+        
+        /// <summary>
+        /// returns false for bad input.
+        /// </summary>
+        /// <param name="value">The value to be validated</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateInput(ArraySegment<byte> value) => value.Count != 0;
 
         /// <summary>
         /// returns false for bad input.

@@ -80,7 +80,7 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="message">Message to be sent</param>
         void Send(string message);
-
+        
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
@@ -89,17 +89,31 @@ namespace RxWebSocket
         void Send(byte[] message);
 
         /// <summary>
+        /// Send binary message to the websocket channel. 
+        /// The message is inserted into the queue, and the actual sending takes place in background thread.
+        /// </summary>
+        /// <param name="message">Binary message to be sent</param>
+        void Send(ArraySegment<byte> message);
+
+        /// <summary>
         /// Send message to the websocket channel. 
         /// It doesn't use a queue
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(string message);
-
+        
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// It doesn't use a queue, 
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(byte[] message);
+
+        /// <summary>
+        /// Send binary message to the websocket channel. 
+        /// It doesn't use a queue, 
+        /// </summary>
+        /// <param name="message">Message to be sent</param>
+        Task SendInstant(ArraySegment<byte> message);
     }
 }

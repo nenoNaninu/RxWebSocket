@@ -35,7 +35,7 @@ namespace RxWebSocket
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
         private readonly BlockingCollection<string> _messagesTextToSendQueue = new BlockingCollection<string>();
-        private readonly BlockingCollection<byte[]> _messagesBinaryToSendQueue = new BlockingCollection<byte[]>();
+        private readonly BlockingCollection<ArraySegment<byte>> _messagesBinaryToSendQueue = new BlockingCollection<ArraySegment<byte>>();
 
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();

@@ -18,10 +18,11 @@ namespace RxWebSocket
             if (ValidationUtils.ValidateInput(message))
             {
                 _messagesTextToSendQueue.Add(message);
-                return;
             }
-
-            throw new WebSocketBadInputException($"Input message (string) of the Send function is null or empty. Please correct it.");
+            else
+            {
+                throw new WebSocketBadInputException($"Input message (string) of the Send function is null or empty. Please correct it.");
+            }
         }
 
         /// <summary>
@@ -33,11 +34,29 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _messagesBinaryToSendQueue.Add(message);
-                return;
+                _messagesBinaryToSendQueue.Add(new ArraySegment<byte>(message));
             }
+            else
+            {
+                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
+            }
+        }
 
-            throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
+        /// <summary>
+        /// Send binary message to the websocket channel. 
+        /// The message is inserted into the queue, and the actual sending takes place in background thread.
+        /// </summary>
+        /// <param name="message">Binary message to be sent</param>
+        public void Send(ArraySegment<byte> message)
+        {
+            if (ValidationUtils.ValidateInput(message))
+            {
+                _messagesBinaryToSendQueue.Add(message);
+            }
+            else
+            {
+                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is 0 Count. Please correct it.");
+            }
         }
 
         /// <summary>
@@ -45,14 +64,16 @@ namespace RxWebSocket
         /// It doesn't use a queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        public Task SendInstant(string message)
+        public async Task SendInstant(string message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(message);
+                await SendInternalSynchronized(message).ConfigureAwait(false);
             }
-
-            throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
+            else
+            {
+                throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
+            }
         }
 
         /// <summary>
@@ -60,14 +81,33 @@ namespace RxWebSocket
         /// It doesn't use a queue.
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        public Task SendInstant(byte[] message)
+        public async Task SendInstant(byte[] message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(message);
+                await SendInternalSynchronized(new ArraySegment<byte>(message)).ConfigureAwait(false);
             }
+            else
+            {
+                throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
+            }
+        }
 
-            throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
+        /// <summary>
+        /// Send binary message to the websocket channel. 
+        /// It doesn't use a queue.
+        /// </summary>
+        /// <param name="message">Message to be sent</param>
+        public async Task SendInstant(ArraySegment<byte> message)
+        {
+            if (ValidationUtils.ValidateInput(message))
+            {
+                await SendInternalSynchronized(message).ConfigureAwait(false);
+            }
+            else
+            {
+                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is 0 Count. Please correct it.");
+            }
         }
 
         private async Task SendTextFromQueue()
@@ -162,7 +202,7 @@ namespace RxWebSocket
 
         private async Task SendInternalSynchronized(string message)
         {
-            using (await _locker.LockAsync())
+            using (await _locker.LockAsync().ConfigureAwait(false))
             {
                 await SendInternal(message).ConfigureAwait(false);
             }
@@ -185,26 +225,26 @@ namespace RxWebSocket
                 .ConfigureAwait(false);
         }
 
-        private async Task SendInternalSynchronized(byte[] message)
+        private async Task SendInternalSynchronized(ArraySegment<byte> message)
         {
-            using (await _locker.LockAsync())
+            using (await _locker.LockAsync().ConfigureAwait(false))
             {
                 await SendInternal(message).ConfigureAwait(false);
             }
         }
 
-        private async Task SendInternal(byte[] message)
+        private async Task SendInternal(ArraySegment<byte> message)
         {
             if (!IsConnected)
             {
-                _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Length}"));
+                _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
                 return;
             }
 
-            _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Length}"));
+            _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Count}"));
 
             await _socket
-                .SendAsync(new ArraySegment<byte>(message), WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
+                .SendAsync(message, WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
                 .ConfigureAwait(false);
         }
     }
