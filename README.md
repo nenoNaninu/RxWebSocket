@@ -36,8 +36,12 @@ dotnet add package RxWebSocket
 # How to use
 
 ```csharp
+#if UNITY
 var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
-
+#else
+Microsoft.Extensions.Logging.ILogger logger;
+var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), logger.AsWebSocketLogger());
+#endif
 //binary receive
 webSocketClient.MessageReceived
     .Where(x => x.MessageType == WebSocketMessageType.Binary)
