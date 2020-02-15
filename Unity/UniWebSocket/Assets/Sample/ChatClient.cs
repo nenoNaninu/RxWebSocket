@@ -31,8 +31,8 @@ namespace RxWebSocket.Sample
                 .Select(bin => JsonSerializer.Deserialize<ChatMessage>(bin))
                 .Subscribe(x => _receivedSubject.OnNext(x));
 
-            _webSocketClient.DisconnectionHappened
-                .Do(x => _logger?.Log("DisconnectionHappened.Do()..." + x.ToString()))
+            _webSocketClient.CloseMessageReceived
+                .Do(x => _logger?.Log($"DisconnectionHappened.Do()...{x}"))
                 .Subscribe(x => _errorSubject.OnNext(x));
 
             _webSocketClient.ExceptionHappened

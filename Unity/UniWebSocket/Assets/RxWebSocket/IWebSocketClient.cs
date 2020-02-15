@@ -21,7 +21,7 @@ namespace RxWebSocket
         /// <summary>
         /// Triggered after the connection was lost.
         /// </summary>
-        IObservable<WebSocketCloseStatus> DisconnectionHappened { get; }
+        IObservable<WebSocketCloseStatus> CloseMessageReceived { get; }
         
         IObservable<WebSocketExceptionDetail> ExceptionHappened { get; }
 

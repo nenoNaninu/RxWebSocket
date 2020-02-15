@@ -33,7 +33,7 @@ namespace RxWebSocket
         private readonly Subject<byte[]> _binaryMessageReceivedSubject = new Subject<byte[]>();
         private readonly Subject<string> _textMessageReceivedSubject = new Subject<string>();
 
-        private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
+        private readonly Subject<WebSocketCloseStatus> _closeMessageReceivedSubject = new Subject<WebSocketCloseStatus>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
         private readonly BlockingCollection<string> _messagesTextToSendQueue = new BlockingCollection<string>();
@@ -62,6 +62,8 @@ namespace RxWebSocket
         public Encoding MessageEncoding { get; set; } = Encoding.UTF8;
 
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
+
+        public Task Wait { get; private set; }
 
         #endregion
 
@@ -186,6 +188,55 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
         }
 
+
+        /// <summary>
+        /// For server(ASP.NET Core)
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="connectedSocket">Already connected socket.</param>
+        public WebSocketClient(WebSocket connectedSocket, ILogger logger = null)
+        {
+            Url = null;
+
+            _logger = logger;
+            _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
+
+            _memoryPool = new MemoryPool(64 * 1024, 4 * 1024, logger);
+        }
+
+        /// <summary>
+        /// For server(ASP.NET Core)
+        /// </summary>
+        /// <param name="initialMemorySize"></param>
+        /// <param name="logger"></param>
+        /// <param name="connectedSocket">Already connected socket.</param>
+        public WebSocketClient(WebSocket connectedSocket, int initialMemorySize, ILogger logger = null)
+        {
+            Url = null;
+
+            _logger = logger;
+            _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
+
+            _memoryPool = new MemoryPool(initialMemorySize, 4 * 1024, logger);
+        }
+
+        /// <summary>
+        /// For server(ASP.NET Core)
+        /// </summary>
+        /// <param name="initialMemorySize"></param>
+        /// <param name="receiveBufferSize"></param>
+        /// <param name="logger"></param>
+        /// <param name="connectedSocket">Already connected socket.</param>
+        public WebSocketClient(WebSocket connectedSocket, int initialMemorySize, int receiveBufferSize, ILogger logger = null)
+        {
+            Url = null;
+
+            _logger = logger;
+            _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
+
+            _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
+        }
+
         public WebSocket NativeSocket => _socket;
         public ClientWebSocket NativeClient => _socket as ClientWebSocket;
 
@@ -202,10 +253,7 @@ namespace RxWebSocket
 
         public IObservable<string> TextMessageReceived => _textMessageReceivedSubject.AsObservable();
 
-        /// <summary>
-        /// Triggered after the connection was lost.
-        /// </summary>
-        public IObservable<WebSocketCloseStatus> DisconnectionHappened => _disconnectedSubject.AsObservable();
+        public IObservable<WebSocketCloseStatus> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
         public IObservable<WebSocketExceptionDetail> ExceptionHappened => _exceptionSubject.AsObservable();
 
@@ -243,9 +291,7 @@ namespace RxWebSocket
             try
             {
                 _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
-#pragma warning disable 4014
-                Listen(_socket, token);
-#pragma warning restore 4014
+                Wait = Listen(_socket, token);
                 LastReceivedTime = DateTime.UtcNow;
                 return true;
             }
@@ -261,6 +307,7 @@ namespace RxWebSocket
         {
             if (IsDisposed)
             {
+                _logger?.Log(FormatLogMessage("Already called disposed..."));
                 return;
             }
 
@@ -282,7 +329,7 @@ namespace RxWebSocket
 
                 _binaryMessageReceivedSubject.Dispose();
                 _textMessageReceivedSubject.Dispose();
-                _disconnectedSubject.Dispose();
+                _closeMessageReceivedSubject.Dispose();
                 _exceptionSubject.Dispose();
             }
             catch (Exception e)
@@ -307,7 +354,7 @@ namespace RxWebSocket
         /// </returns>
         public async Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose = true)
         {
-            if (_socket == null || IsConnected == false)
+            if (_socket == null || IsClosed == true)
             {
                 IsStarted = false;
                 return false;
@@ -391,7 +438,11 @@ namespace RxWebSocket
                     {
                         if (result.CloseStatus != null)
                         {
-                            _disconnectedSubject.OnNext(result.CloseStatus.Value);
+                            _closeMessageReceivedSubject.OnNext(result.CloseStatus.Value);
+
+                            var logMessage = FormatLogMessage($"Received: Close MessageType, {result.CloseStatus.Value}");
+                            _logger?.Log(logMessage);
+                            await CloseAsync(WebSocketCloseStatus.NormalClosure, logMessage, true).ConfigureAwait(false);
                         }
                         return;
                     }
