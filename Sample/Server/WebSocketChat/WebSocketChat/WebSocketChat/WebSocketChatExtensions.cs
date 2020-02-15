@@ -9,9 +9,10 @@ namespace WebSocketChat
     {
         public static IServiceCollection AddWebSocketChatHandler(this IServiceCollection services)
         {
-            services.AddTransient<WebSocketObjectHolder>();
+            var exportedTypes = Assembly.GetEntryAssembly()?.ExportedTypes;
+            if (exportedTypes == null) return services;
 
-            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
+            foreach (var type in exportedTypes)
             {
                 if (type.GetTypeInfo().BaseType == typeof(WebSocketHandler))
                 {

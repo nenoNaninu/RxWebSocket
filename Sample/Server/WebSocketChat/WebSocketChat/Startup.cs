@@ -27,6 +27,10 @@ namespace WebSocketChat
         {
             services.AddControllers();
             services.AddWebSocketChatHandler();
+            
+            // var serviceProvider = services.BuildServiceProvider();
+            // var logger = serviceProvider.GetService<ILogger<ChatHandler>>();
+            // services.AddSingleton(typeof(ILogger), logger);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -42,15 +46,13 @@ namespace WebSocketChat
             app.UseRouting();
 
             app.UseAuthorization();
-        
 
             app.UseWebSockets(new WebSocketOptions()
             {
                 KeepAliveInterval = TimeSpan.FromSeconds(10),
             });
 
-            app.MapWebSocketChatMiddleware("/ws", serviceProvider.GetService<ChatMessageHandler>());
-
+            app.MapWebSocketChatMiddleware("/ws", serviceProvider.GetService<ChatHandler>());
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }

@@ -1,81 +1,73 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace WebSocketChat
 {
     public abstract class WebSocketHandler
     {
-        protected WebSocketObjectHolder WebSocketObjectHolder { get; set; }
+        private BlockingCollection<WebSocketWithName> _webSocketCollection = new BlockingCollection<WebSocketWithName>();
 
-        public WebSocketHandler(WebSocketObjectHolder webSocketObjectHolder)
+        public WebSocketHandler()
         {
-            WebSocketObjectHolder = webSocketObjectHolder;
-        }
-
-        public virtual Task OnConnected(WebSocketWithName socket)
-        {
-            WebSocketObjectHolder.AddSocket(socket);
-            return Task.CompletedTask;
-        }
-
-        public virtual async Task OnDisconnected(WebSocketWithName socket)
-        {
-            await WebSocketObjectHolder.RemoveSocket(WebSocketObjectHolder.GetId(socket));
-        }
-
-        public async Task SendMessageAsync(WebSocketWithName socket, string message)
-        {
-            if(socket.Socket.State != WebSocketState.Open) return;
-
-            var buffer = Encoding.UTF8.GetBytes(message);
-
-            await socket.Socket.SendAsync(new ArraySegment<byte>(buffer, 0, buffer.Length), WebSocketMessageType.Text, true,
-                CancellationToken.None);
-        }
-
-        public async Task SendMessageAsync(string socketId, string message)
-        {
-           await SendMessageAsync(WebSocketObjectHolder.GetSocketById(socketId), message);
-        }
-
-        public async Task SendMessageToAllAsync(string message)
-        {
-            foreach (var pair in WebSocketObjectHolder.GetAll())
+            Console.CancelKeyPress += (sender, args) =>
             {
-                if (pair.Value.Socket.State == WebSocketState.Open)
+                foreach (var socket in _webSocketCollection)
                 {
-                    await SendMessageAsync(pair.Value, message);
+                    socket.WebSocketClient.CloseAsync(WebSocketCloseStatus.InternalServerError, "press ctrl+c", true).Wait();
                 }
-            }
+            };
         }
-        
-        public async Task SendMessageAsync(WebSocketWithName socket, byte[] message)
+        public virtual void OnConnected(WebSocketWithName socket)
         {
-            if(socket.Socket.State != WebSocketState.Open) return;
-
-            await socket.Socket.SendAsync(new ArraySegment<byte>(message, 0, message.Length), WebSocketMessageType.Binary, true,
-                CancellationToken.None);
+            _webSocketCollection.Add(socket);
         }
 
-        public async Task SendMessageAsync(string socketId, byte[] message)
+        public virtual void OnDisconnected(WebSocketWithName socket)
         {
-            await SendMessageAsync(WebSocketObjectHolder.GetSocketById(socketId), message);
+            _webSocketCollection.TryTake(out socket);
         }
 
-        public async Task SendMessageToAllAsync(byte[] message)
+        public void SendMessageAsync(WebSocketWithName socket, string message)
         {
-            foreach (var pair in WebSocketObjectHolder.GetAll())
+            if (!socket.WebSocketClient.IsConnected)
             {
-                if (pair.Value.Socket.State == WebSocketState.Open)
+                return;
+            }
+
+            socket.WebSocketClient.Send(message);
+        }
+
+        public void SendMessageToAllAsync(string message)
+        {
+            foreach (var socket in _webSocketCollection)
+            {
+                if (socket.WebSocketClient.IsConnected)
                 {
-                    await SendMessageAsync(pair.Value, message);
+                    socket.WebSocketClient.Send(message);
                 }
             }
         }
 
-        public abstract Task ReceiveAsync(WebSocketWithName socket, WebSocketReceiveResult result, byte[] buffer);
+        public void SendMessageAsync(WebSocketWithName socket, byte[] message)
+        {
+            if (!socket.WebSocketClient.IsConnected)
+            {
+                return;
+            }
+
+            socket.WebSocketClient.Send(message);
+        }
+
+        public void SendMessageToAllAsync(byte[] message)
+        {
+            foreach (var socket in _webSocketCollection)
+            {
+                if (socket.WebSocketClient.IsConnected)
+                {
+                    socket.WebSocketClient.Send(message);
+                }
+            }
+        }
     }
 }

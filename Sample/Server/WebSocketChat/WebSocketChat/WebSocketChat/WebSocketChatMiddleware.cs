@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Buffers;
-using System.IO;
-using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using RxWebSocket;
+using RxWebSocket.Extensions;
 
 namespace WebSocketChat
 {
@@ -14,10 +15,13 @@ namespace WebSocketChat
         private readonly RequestDelegate _next;
         private WebSocketHandler _webSocketHandler { get; set; }
 
-        public WebSocketChatMiddleware(RequestDelegate next, WebSocketHandler webSocketHandler)
+        private ILogger<WebSocketChatMiddleware> _logger;
+
+        public WebSocketChatMiddleware(RequestDelegate next, WebSocketHandler webSocketHandler, ILogger<WebSocketChatMiddleware> logger)
         {
             _next = next;
             _webSocketHandler = webSocketHandler;
+            _logger = logger;
         }
 
         public async Task Invoke(HttpContext context)
@@ -25,49 +29,22 @@ namespace WebSocketChat
             if (!context.WebSockets.IsWebSocketRequest) return;
 
             var socket = await context.WebSockets.AcceptWebSocketAsync();
-            
+
             var buffer = ArrayPool<byte>.Shared.Rent(1024 * 8);
             var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             var name = Encoding.UTF8.GetString(buffer, 0, result.Count);
-            ArrayPool<byte>.Shared.Return(buffer,true);
-            var socketWithName = new WebSocketWithName(socket, name);
+            ArrayPool<byte>.Shared.Return(buffer, true);
 
-            await _webSocketHandler.OnConnected(socketWithName);
+            using var rxSocket = new WebSocketClient(socket, _logger.AsWebSocketLogger());
 
-            await Receive(socketWithName, async (result, buffer) =>
-            {
-                if (result.MessageType == WebSocketMessageType.Binary)
-                {
-                    await _webSocketHandler.ReceiveAsync(socketWithName, result, buffer);
-                }
-                else if (result.MessageType == WebSocketMessageType.Close)
-                {
-                    await _webSocketHandler.OnDisconnected(socketWithName);
-                }
-            });
-        }
+            await rxSocket.ConnectAndStartListening();
 
-        public async Task Receive(WebSocketWithName socketWithName, Action<WebSocketReceiveResult, byte[]> handleMessage)
-        {
-            var buffer = new ArraySegment<byte>(new byte[1024 * 8]);
+            var socketWithName = new WebSocketWithName(rxSocket, name);
 
-            while (socketWithName.Socket.State == WebSocketState.Open)
-            {
-                WebSocketReceiveResult result;
-                var ms = new MemoryStream();
-                do
-                {
-                    result = await socketWithName.Socket.ReceiveAsync(buffer, CancellationToken.None);
-                    if (buffer.Array != null)
-                        ms.Write(buffer.Array, buffer.Offset, result.Count);
-                } while (!result.EndOfMessage);
+            _webSocketHandler.OnConnected(socketWithName);
 
-                ms.Seek(0, SeekOrigin.Begin);
-
-                var receiveResult = ms.ToArray();
-                Console.WriteLine("receiveResut: " + receiveResult.Length);
-                handleMessage(result, receiveResult);
-            }
+            //If you do not wait here, the connection will be disconnected.
+            await rxSocket.Wait;
         }
     }
 }

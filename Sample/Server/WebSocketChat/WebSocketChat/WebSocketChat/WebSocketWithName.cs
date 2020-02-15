@@ -1,16 +1,17 @@
-using System.Net.WebSockets;
+using RxWebSocket;
 
 namespace WebSocketChat
 {
     public class WebSocketWithName
     {
-        public WebSocket Socket { get; }
+        public WebSocketClient WebSocketClient { get; private set; }
         public string Name { get; }
 
-        public WebSocketWithName(WebSocket websocket, string name)
+        public WebSocketWithName(WebSocketClient websocket, string name)
         {
-            Socket = websocket;
+            WebSocketClient = websocket;
             Name = name;
+            WebSocketClient.Name = name;
         }
     }
 }
