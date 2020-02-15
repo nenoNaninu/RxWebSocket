@@ -15,16 +15,16 @@ namespace RxWebSocket.Sample
         // Start is called before the first frame update
         async void Start()
         {
-            var webSocketClient = new WebSocketClient(new Uri(""), () => new ClientWebSocket
-            {
-                Options =
-                {
-                    KeepAliveInterval = TimeSpan.FromSeconds(5),
-                }
-            });
+            // var webSocketClient = new WebSocketClient(new Uri(""), () => new ClientWebSocket
+            // {
+            //     Options =
+            //     {
+            //         KeepAliveInterval = TimeSpan.FromSeconds(5),
+            //     }
+            // });
 
 //            var url = new Uri("ws://echo.websocket.org");
-            var url = new Uri("ws://192.168.0.3:8080/ws");
+            var url = new Uri("wss://echo.websocket.org/");
 
             _client = new WebSocketClient(url, new UnityConsoleLogger());
 
@@ -34,6 +34,7 @@ namespace RxWebSocket.Sample
                 .ObserveOn(Scheduler.MainThread)
                 .Subscribe(msg =>
                 {
+                    Debug.Log(msg.MessageType);
                     Debug.Log($"Message received: {msg}");
                     _transform.position += Vector3.up * 10;
                 })
@@ -46,6 +47,7 @@ namespace RxWebSocket.Sample
             });
 
             await _client.ConnectAndStartListening();
+            _client.Send("はじめまーす");
         }
 
         private async void OnDestroy()

@@ -30,7 +30,9 @@ namespace RxWebSocket
 
         private readonly AsyncLock _locker = new AsyncLock();
 
-        private readonly Subject<ResponseMessage> _messageReceivedSubject = new Subject<ResponseMessage>();
+        private readonly Subject<byte[]> _binaryMessageReceivedSubject = new Subject<byte[]>();
+        private readonly Subject<string> _textMessageReceivedSubject = new Subject<string>();
+
         private readonly Subject<WebSocketCloseStatus> _disconnectedSubject = new Subject<WebSocketCloseStatus>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
@@ -51,7 +53,7 @@ namespace RxWebSocket
 
         /// <summary>
         /// Returns true if ConnectAndStartListening() method was already called.
-        /// Returns False if ConnectAndStartListening is not called or already called Dispose().
+        /// Returns False if ConnectAndStartListening() is not called or already called Dispose().
         /// </summary>
         public bool IsStarted { get; private set; }
 
@@ -192,17 +194,13 @@ namespace RxWebSocket
 
         public WebSocketState WebSocketState => _socket?.State ?? WebSocketState.None;
 
-        public IObservable<ResponseMessage> MessageReceived => _messageReceivedSubject.AsObservable();
+        public IObservable<ResponseMessage> MessageReceived => _binaryMessageReceivedSubject
+            .Select(ResponseMessage.BinaryMessage)
+            .Merge(_textMessageReceivedSubject.Select(ResponseMessage.TextMessage));
 
-        public IObservable<byte[]> BinaryMessageReceived => _messageReceivedSubject.AsObservable()
-            .Where(x => x.MessageType == WebSocketMessageType.Binary)
-            .Select(x => x.Binary)
-            .Publish().RefCount();
+        public IObservable<byte[]> BinaryMessageReceived => _binaryMessageReceivedSubject.AsObservable();
 
-        public IObservable<string> TextMessageReceived => _messageReceivedSubject.AsObservable()
-            .Where(x => x.MessageType == WebSocketMessageType.Text)
-            .Select(x => x.Text)
-            .Publish().RefCount();
+        public IObservable<string> TextMessageReceived => _textMessageReceivedSubject.AsObservable();
 
         /// <summary>
         /// Triggered after the connection was lost.
@@ -271,20 +269,21 @@ namespace RxWebSocket
 
             try
             {
-                _cancellationAllJobs?.Cancel();
-                _cancellationCurrentJobs?.Cancel();
+                _cancellationAllJobs.Cancel();
+                _cancellationCurrentJobs.Cancel();
 
                 _socket?.Abort();
                 _socket?.Dispose();
 
-                _cancellationAllJobs?.Dispose();
-                _cancellationCurrentJobs?.Dispose();
-                _messagesTextToSendQueue?.Dispose();
-                _messagesBinaryToSendQueue?.Dispose();
+                _cancellationAllJobs.Dispose();
+                _cancellationCurrentJobs.Dispose();
+                _messagesTextToSendQueue.Dispose();
+                _messagesBinaryToSendQueue.Dispose();
 
-                _messageReceivedSubject?.Dispose();
-                _disconnectedSubject?.Dispose();
-                _exceptionSubject?.Dispose();
+                _binaryMessageReceivedSubject.Dispose();
+                _textMessageReceivedSubject.Dispose();
+                _disconnectedSubject.Dispose();
+                _exceptionSubject.Dispose();
             }
             catch (Exception e)
             {
@@ -370,7 +369,8 @@ namespace RxWebSocket
                             _memoryPool.Offset += result.Count;
                             memorySegment = _memoryPool.SliceFromOffset();
                         }
-                    } while (!result.EndOfMessage);
+                    }
+                    while (!result.EndOfMessage);
 
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
@@ -384,16 +384,21 @@ namespace RxWebSocket
 
                     var dstArray = _memoryPool.ToArray();
 
-                    ResponseMessage message = result.MessageType == WebSocketMessageType.Text
-                        ? ResponseMessage.TextMessage(MessageEncoding.GetString(dstArray))
-                        : ResponseMessage.BinaryMessage(dstArray);
-
-                    _logger?.Log(FormatLogMessage($"Received:  {message.ToString()}"));
                     LastReceivedTime = DateTime.UtcNow;
 
-                    _messageReceivedSubject.OnNext(message);
-                    //
-                } while (client.State == WebSocketState.Open && !token.IsCancellationRequested);
+                    if (result.MessageType == WebSocketMessageType.Text)
+                    {
+                        var receivedText = MessageEncoding.GetString(dstArray);
+                        _logger?.Log(FormatLogMessage($"Received: {receivedText}"));
+                        _textMessageReceivedSubject.OnNext(receivedText);
+                    }
+                    else
+                    {
+                        _logger?.Log(FormatLogMessage($"Type binary, length: {dstArray?.Length}"));
+                        _binaryMessageReceivedSubject.OnNext(dstArray);
+                    }
+                }
+                while (client.State == WebSocketState.Open && !token.IsCancellationRequested);
             }
             catch (TaskCanceledException)
             {
