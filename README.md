@@ -36,12 +36,13 @@ dotnet add package RxWebSocket
 # How to use
 
 ```csharp
-#if UNITY
+#if Unity
 var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
-#else
-Microsoft.Extensions.Logging.ILogger logger;
+#else 
+Microsoft.Extensions.Logging.ILogger<T> logger;
 var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), logger.AsWebSocketLogger());
 #endif
+
 //binary receive
 webSocketClient.MessageReceived
     .Where(x => x.MessageType == WebSocketMessageType.Binary)
@@ -81,6 +82,27 @@ await webSocketClient.SendInstant("string or byte[]");
 //You can decide whether to dispose at the same time as Close with the last bool parameter.
 await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "description", true);
 ```
+
+In the [ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet), you can use as follow:
+```csharp
+HttpContext context;
+Microsoft.Extensions.Logging.ILogger<T> logger;
+
+if (!context.WebSockets.IsWebSocketRequest) return;
+
+var socket = await context.WebSockets.AcceptWebSocketAsync();
+
+using var webSocketClient = new WebSocketClient(socket, _logger.AsWebSocketLogger());
+
+// subscribe setting...
+
+await webSocketClient.ConnectAndStartListening();
+
+//If you do not wait, the connection will be disconnected.
+await webSocketClient.Wait;
+```
+[Here](https://github.com/nenoNaninu/RxWebSocket/blob/master/Sample/Server/WebSocketChat/WebSocketChat/WebSocketChat/WebSocketChatMiddleware.cs#L29-L47) is sample.
+
 If you want to make detailed settings for WebSocket, use the factory method.
 ```csharp
 var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
@@ -120,8 +142,8 @@ I prepared a simple chat app as a sample. When the server starts, connect to ```
 open [this scene](https://github.com/nenoNaninu/RxWebSocket/tree/master/Unity/UniWebSocket/Assets/Scenes) and run.
 
 
-## Server(C#/ ASP.NET Core3.0)
-Requires [.NET Core3.0](https://dotnet.microsoft.com/download/dotnet-core/3.0).  First, set your ip [here](https://github.com/nenoNaninu/UniWebSocket/blob/master/Sample/Server/WebSocketChat/WebSocketChat/Program.cs#L23).
+## Server(C#/ ASP.NET Core3.1)
+Requires [.NET Core3.1](https://dotnet.microsoft.com/download/dotnet-core/3.0).  First, set your ip [here](https://github.com/nenoNaninu/UniWebSocket/blob/master/Sample/Server/WebSocketChat/WebSocketChat/Program.cs#L23).
 Then type the following command
 ```
 $ cd Sample/Server/WebSocketChat/WebSocketChat/
