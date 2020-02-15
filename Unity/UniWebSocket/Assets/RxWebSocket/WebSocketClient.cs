@@ -361,6 +361,7 @@ namespace RxWebSocket
                     var memorySegment = _memoryPool.SliceFromOffset();
 
                     WebSocketReceiveResult result;
+
                     do
                     {
                         result = await client.ReceiveAsync(memorySegment, token).ConfigureAwait(false);
