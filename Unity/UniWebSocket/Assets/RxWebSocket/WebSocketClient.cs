@@ -361,7 +361,6 @@ namespace RxWebSocket
                     var memorySegment = _memoryPool.SliceFromOffset();
 
                     WebSocketReceiveResult result;
-
                     do
                     {
                         result = await client.ReceiveAsync(memorySegment, token).ConfigureAwait(false);
@@ -394,7 +393,6 @@ namespace RxWebSocket
                         {
                             _disconnectedSubject.OnNext(result.CloseStatus.Value);
                         }
-
                         return;
                     }
                 }
