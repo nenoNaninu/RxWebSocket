@@ -364,6 +364,7 @@ namespace RxWebSocket
                     do
                     {
                         result = await client.ReceiveAsync(memorySegment, token).ConfigureAwait(false);
+
                         if (result.MessageType != WebSocketMessageType.Close)
                         {
                             _memoryPool.Offset += result.Count;
@@ -372,7 +373,21 @@ namespace RxWebSocket
                     }
                     while (!result.EndOfMessage);
 
-                    if (result.MessageType == WebSocketMessageType.Close)
+                    LastReceivedTime = DateTime.UtcNow;
+
+                    if (result.MessageType == WebSocketMessageType.Text)
+                    {
+                        var receivedText = MessageEncoding.GetString(_memoryPool.ToArray());
+                        _logger?.Log(FormatLogMessage($"Received: Type Text: {receivedText}"));
+                        _textMessageReceivedSubject.OnNext(receivedText);
+                    }
+                    else if (result.MessageType == WebSocketMessageType.Binary)
+                    {
+                        var dstArray = _memoryPool.ToArray();
+                        _logger?.Log(FormatLogMessage($"Received: Type Binary, length: {dstArray?.Length}"));
+                        _binaryMessageReceivedSubject.OnNext(dstArray);
+                    }
+                    else if (result.MessageType == WebSocketMessageType.Close)
                     {
                         if (result.CloseStatus != null)
                         {
@@ -380,22 +395,6 @@ namespace RxWebSocket
                         }
 
                         return;
-                    }
-
-                    var dstArray = _memoryPool.ToArray();
-
-                    LastReceivedTime = DateTime.UtcNow;
-
-                    if (result.MessageType == WebSocketMessageType.Text)
-                    {
-                        var receivedText = MessageEncoding.GetString(dstArray);
-                        _logger?.Log(FormatLogMessage($"Received: {receivedText}"));
-                        _textMessageReceivedSubject.OnNext(receivedText);
-                    }
-                    else
-                    {
-                        _logger?.Log(FormatLogMessage($"Type binary, length: {dstArray?.Length}"));
-                        _binaryMessageReceivedSubject.OnNext(dstArray);
                     }
                 }
                 while (client.State == WebSocketState.Open && !token.IsCancellationRequested);
