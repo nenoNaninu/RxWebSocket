@@ -307,7 +307,7 @@ namespace RxWebSocket
         {
             if (IsDisposed)
             {
-                _logger?.Log(FormatLogMessage("Already called disposed..."));
+                _logger?.Log(FormatLogMessage("Already disposed."));
                 return;
             }
 
@@ -440,7 +440,7 @@ namespace RxWebSocket
                         {
                             _closeMessageReceivedSubject.OnNext(result.CloseStatus.Value);
 
-                            var logMessage = FormatLogMessage($"Received: Close MessageType, {result.CloseStatus.Value}");
+                            var logMessage = FormatLogMessage($"Received: Type Close Message, {result.CloseStatus.Value}");
                             _logger?.Log(logMessage);
                             await CloseAsync(WebSocketCloseStatus.NormalClosure, logMessage, true).ConfigureAwait(false);
                         }

@@ -34,7 +34,7 @@ dotnet add package RxWebSocket
 - [UniRx](https://github.com/neuecc/UniRx/releases)
 
 # How to use
-
+## Client
 ```csharp
 #if Unity
 var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
@@ -82,8 +82,7 @@ await webSocketClient.SendInstant("string or byte[]");
 //You can decide whether to dispose at the same time as Close with the last bool parameter.
 await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "description", true);
 ```
-
-In the [ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet), you can use as follow:
+## Server ([ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet))
 ```csharp
 HttpContext context;
 Microsoft.Extensions.Logging.ILogger<T> logger;
@@ -92,7 +91,7 @@ if (!context.WebSockets.IsWebSocketRequest) return;
 
 var socket = await context.WebSockets.AcceptWebSocketAsync();
 
-using var webSocketClient = new WebSocketClient(socket, _logger.AsWebSocketLogger());
+using var webSocketClient = new WebSocketClient(socket, logger.AsWebSocketLogger());
 
 // subscribe setting...
 
@@ -103,6 +102,7 @@ await webSocketClient.Wait;
 ```
 [Here](https://github.com/nenoNaninu/RxWebSocket/blob/master/Sample/Server/WebSocketChat/WebSocketChat/WebSocketChat/WebSocketChatMiddleware.cs#L29-L47) is sample.
 
+## Options
 If you want to make detailed settings for WebSocket, use the factory method.
 ```csharp
 var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
