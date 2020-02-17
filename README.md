@@ -56,7 +56,7 @@ webSocketClient.BinaryMessageReceived
 webSocketClient.TextMessageReceived
     .Subscribe(x => DoSomething(x));
 
-webSocketClient.DisconnectionHappened
+webSocketClient.CloseMessageReceived
     .Subscribe(x => DoSomething(x));
 
 webSocketClient.ExceptionHappened
