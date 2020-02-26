@@ -204,7 +204,7 @@ namespace RxWebSocket
 
         private async Task SendInternal(string message)
         {
-            if (!IsConnected)
+            if (!IsOpen)
             {
                 _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
                 return;
@@ -229,7 +229,7 @@ namespace RxWebSocket
 
         private async Task SendInternal(ArraySegment<byte> message)
         {
-            if (!IsConnected)
+            if (!IsOpen)
             {
                 _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
                 return;

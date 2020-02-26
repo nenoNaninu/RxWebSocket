@@ -36,7 +36,7 @@ namespace RxWebSocket
         /// </summary>
         bool IsStarted { get; }
 
-        bool IsConnected { get; }
+        bool IsOpen { get; }
 
         bool IsClosed { get; }
 
@@ -71,8 +71,19 @@ namespace RxWebSocket
         /// <summary>
         /// close websocket connection.
         /// </summary>
+        /// <param name="status"></param>
+        /// <param name="statusDescription"></param>
+        /// <param name="dispose"></param>
         /// <returns>Returns true if close was successful</returns>
         Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose);
+        
+        /// <summary>
+        /// close websocket connection.
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="statusDescription"></param>
+        /// <returns>Returns true if close was successful</returns>
+        Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription);
 
         /// <summary>
         /// Send message to the websocket channel. 

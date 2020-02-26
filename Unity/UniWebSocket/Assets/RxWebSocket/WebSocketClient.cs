@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
-using RxWebSocket.Logging;
 using RxWebSocket.Threading;
 using RxWebSocket.Validations;
+using RxWebSocket.Logging;
 
 #if NETSTANDARD2_1 || NETSTANDARD2_0
 using System.Reactive.Subjects;
@@ -21,7 +21,6 @@ namespace RxWebSocket
     public partial class WebSocketClient : IWebSocketClient
     {
         #region Member variable with state.
-
         private readonly ILogger _logger;
 
         private readonly MemoryPool _memoryPool;
@@ -43,6 +42,9 @@ namespace RxWebSocket
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
 
         private WebSocket _socket;
+        
+        private bool _sentCloseRequest = false;
+        private Task _closeTask;
 
         public Uri Url { get; }
 
@@ -64,7 +66,6 @@ namespace RxWebSocket
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
         public Task Wait { get; private set; }
-
         #endregion
 
         /// <param name="url">Target websocket url (wss://)</param>
@@ -240,7 +241,7 @@ namespace RxWebSocket
         public WebSocket NativeSocket => _socket;
         public ClientWebSocket NativeClient => _socket as ClientWebSocket;
 
-        public bool IsConnected => _socket != null && _socket.State == WebSocketState.Open;
+        public bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
         public bool IsClosed => _socket != null && _socket.State == WebSocketState.Closed;
 
         public WebSocketState WebSocketState => _socket?.State ?? WebSocketState.None;
@@ -278,12 +279,12 @@ namespace RxWebSocket
             IsStarted = true;
 
             _logger?.Log(FormatLogMessage("Starting..."));
-            var connectionTask = ConnectAndStartListeningInternal(Url, _cancellationCurrentJobs.Token).ConfigureAwait(false);
+            var connectionTask = ConnectAndStartListeningInternal(Url, _cancellationCurrentJobs.Token);
 
             StartBackgroundThreadForSendingText();
             StartBackgroundThreadForSendingBinary();
 
-            return await connectionTask;
+            return await connectionTask.ConfigureAwait(false);
         }
 
         private async Task<bool> ConnectAndStartListeningInternal(Uri uri, CancellationToken token)
@@ -348,21 +349,58 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
+        /// <returns>
+        /// true is normal.
+        /// If false, there is a problem.
+        /// This function is equivalent to CloseAsync(status, statusDescription, true)
+        /// </returns>
+        public Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription)
+        {
+            return CloseAsync(status, statusDescription, true);
+        }
+
+        /// <summary>
+        /// Close WebSocket
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="statusDescription"></param>
         /// <param name="dispose"></param>
         /// <returns>true is normal.
-        /// If false, there is a problem and even if dispose = true, it will not be automatically disposed.
+        /// If false, there is a problem.
         /// </returns>
-        public async Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose = true)
+        public async Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
-            if (_socket == null || IsClosed == true)
+            if (_sentCloseRequest)
             {
+                // prevent sending multiple disconnect requests.
+                try
+                {
+                    await _closeTask.ConfigureAwait(false);
+                    return true;
+                }
+                catch(Exception e)
+                {
+                    _logger?.Error(e, FormatLogMessage($"Error while disconnect requests, message: '{e.Message}'"));
+                    return false;
+                }
+            }
+
+            if (_socket == null ||
+                _socket.State == WebSocketState.Closed ||
+                _socket.State == WebSocketState.Aborted ||
+                _socket.State == WebSocketState.None)
+            {
+                _logger?.Error(FormatLogMessage($"Called CloseAsync, but websocket state is not correct."));
                 IsStarted = false;
                 return false;
             }
 
             try
             {
-                await _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token).ConfigureAwait(false);
+                // await until the connection closed.
+                _closeTask = _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token);
+                _sentCloseRequest = true;
+                await _closeTask.ConfigureAwait(false);
 
                 if (dispose)
                 {
@@ -436,10 +474,10 @@ namespace RxWebSocket
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
+                        //close handshake
                         if (result.CloseStatus != null)
                         {
                             _closeMessageReceivedSubject.OnNext(result.CloseStatus.Value);
-
                             var logMessage = FormatLogMessage($"Received: Type Close Message, {result.CloseStatus.Value}");
                             _logger?.Log(logMessage);
                             await CloseAsync(WebSocketCloseStatus.NormalClosure, logMessage, true).ConfigureAwait(false);

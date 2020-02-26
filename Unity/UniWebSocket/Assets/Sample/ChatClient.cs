@@ -52,7 +52,9 @@ namespace RxWebSocket.Sample
             if (_webSocketClient != null)
             {
                 _logger?.Log("ChatClient will be closed!!");
-                await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal", true);
+                var closeTask = _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal");
+                _logger?.Log(_webSocketClient.WebSocketState.ToString());
+                await closeTask;
             }
         }
 
