@@ -35,7 +35,7 @@ namespace WebSocketChat
             var name = Encoding.UTF8.GetString(buffer, 0, result.Count);
             ArrayPool<byte>.Shared.Return(buffer, true);
 
-            using var rxSocket = new WebSocketClient(socket, _logger.AsWebSocketLogger());
+            var rxSocket = new WebSocketClient(socket, _logger.AsWebSocketLogger());
 
             await rxSocket.ConnectAndStartListening();
 

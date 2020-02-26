@@ -30,7 +30,7 @@ namespace WebSocketChat
 
         public void SendMessageAsync(WebSocketWithName socket, string message)
         {
-            if (!socket.WebSocketClient.IsConnected)
+            if (!socket.WebSocketClient.IsOpen)
             {
                 return;
             }
@@ -42,7 +42,7 @@ namespace WebSocketChat
         {
             foreach (var socket in _webSocketCollection)
             {
-                if (socket.WebSocketClient.IsConnected)
+                if (socket.WebSocketClient.IsOpen)
                 {
                     socket.WebSocketClient.Send(message);
                 }
@@ -51,7 +51,7 @@ namespace WebSocketChat
 
         public void SendMessageAsync(WebSocketWithName socket, byte[] message)
         {
-            if (!socket.WebSocketClient.IsConnected)
+            if (!socket.WebSocketClient.IsOpen)
             {
                 return;
             }
@@ -63,7 +63,7 @@ namespace WebSocketChat
         {
             foreach (var socket in _webSocketCollection)
             {
-                if (socket.WebSocketClient.IsConnected)
+                if (socket.WebSocketClient.IsOpen)
                 {
                     socket.WebSocketClient.Send(message);
                 }
