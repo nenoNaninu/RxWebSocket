@@ -374,7 +374,7 @@ namespace RxWebSocket
             // prevent sending multiple disconnect requests.
             using (await _closeLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_socket.State == WebSocketState.Closed)
+                if (IsClosed)
                 {
                     return true;
                 }
