@@ -196,7 +196,7 @@ namespace RxWebSocket
 
         private async Task SendInternalSynchronized(string message)
         {
-            using (await _locker.LockAsync().ConfigureAwait(false))
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
                 await SendInternal(message).ConfigureAwait(false);
             }
@@ -221,7 +221,7 @@ namespace RxWebSocket
 
         private async Task SendInternalSynchronized(ArraySegment<byte> message)
         {
-            using (await _locker.LockAsync().ConfigureAwait(false))
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
                 await SendInternal(message).ConfigureAwait(false);
             }

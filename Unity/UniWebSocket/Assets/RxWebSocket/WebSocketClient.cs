@@ -27,7 +27,8 @@ namespace RxWebSocket
 
         private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
 
-        private readonly AsyncLock _locker = new AsyncLock();
+        private readonly AsyncLock _sendLocker = new AsyncLock();
+        private readonly AsyncLock _closeLocker = new AsyncLock();
 
         private readonly Subject<byte[]> _binaryMessageReceivedSubject = new Subject<byte[]>();
         private readonly Subject<string> _textMessageReceivedSubject = new Subject<string>();
@@ -42,9 +43,6 @@ namespace RxWebSocket
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
 
         private WebSocket _socket;
-        
-        private bool _sentCloseRequest = false;
-        private Task _closeTask;
 
         public Uri Url { get; }
 
@@ -308,7 +306,6 @@ namespace RxWebSocket
         {
             if (IsDisposed)
             {
-                _logger?.Log(FormatLogMessage("Already disposed."));
                 return;
             }
 
@@ -320,7 +317,11 @@ namespace RxWebSocket
                 _cancellationAllJobs.Cancel();
                 _cancellationCurrentJobs.Cancel();
 
-                _socket?.Abort();
+                if (!this.IsClosed)
+                {
+                    _socket?.Abort();
+                }
+
                 _socket?.Dispose();
 
                 _cancellationAllJobs.Dispose();
@@ -370,54 +371,46 @@ namespace RxWebSocket
         /// </returns>
         public async Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
-            if (_sentCloseRequest)
+            // prevent sending multiple disconnect requests.
+            using (await _closeLocker.LockAsync().ConfigureAwait(false))
             {
-                // prevent sending multiple disconnect requests.
-                try
+                if (_socket.State == WebSocketState.Closed)
                 {
-                    await _closeTask.ConfigureAwait(false);
                     return true;
                 }
-                catch(Exception e)
+
+                if (_socket == null ||
+                    _socket.State == WebSocketState.Aborted ||
+                    _socket.State == WebSocketState.None)
                 {
-                    _logger?.Error(e, FormatLogMessage($"Error while disconnect requests, message: '{e.Message}'"));
+                    _logger?.Error(FormatLogMessage($"Called CloseAsync, but websocket state is not correct."));
+                    IsStarted = false;
                     return false;
                 }
-            }
 
-            if (_socket == null ||
-                _socket.State == WebSocketState.Closed ||
-                _socket.State == WebSocketState.Aborted ||
-                _socket.State == WebSocketState.None)
-            {
-                _logger?.Error(FormatLogMessage($"Called CloseAsync, but websocket state is not correct."));
-                IsStarted = false;
-                return false;
-            }
-
-            try
-            {
-                // await until the connection closed.
-                _closeTask = _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token);
-                _sentCloseRequest = true;
-                await _closeTask.ConfigureAwait(false);
-
-                if (dispose)
+                try
                 {
-                    this.Dispose();
-                }
+                    // await until the connection closed.
+                    await _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token).ConfigureAwait(false);
+                    _logger.Log(_socket.State.ToString());
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                _logger?.Error(e, FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Close));
-                return false;
-            }
-            finally
-            {
-                IsStarted = false;
+                    if (dispose)
+                    {
+                        this.Dispose();
+                    }
+
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    _logger?.Error(e, FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
+                    _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Close));
+                    return false;
+                }
+                finally
+                {
+                    IsStarted = false;
+                }
             }
         }
 
