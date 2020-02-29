@@ -392,7 +392,6 @@ namespace RxWebSocket
                 {
                     // await until the connection closed.
                     await _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token).ConfigureAwait(false);
-                    _logger.Log(_socket.State.ToString());
 
                     if (dispose)
                     {
