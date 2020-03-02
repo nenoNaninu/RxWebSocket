@@ -33,7 +33,7 @@ namespace RxWebSocket
         private readonly Subject<byte[]> _binaryMessageReceivedSubject = new Subject<byte[]>();
         private readonly Subject<string> _textMessageReceivedSubject = new Subject<string>();
 
-        private readonly Subject<WebSocketCloseStatus> _closeMessageReceivedSubject = new Subject<WebSocketCloseStatus>();
+        private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
         private readonly BlockingCollection<string> _messagesTextToSendQueue = new BlockingCollection<string>();
@@ -252,7 +252,7 @@ namespace RxWebSocket
 
         public IObservable<string> TextMessageReceived => _textMessageReceivedSubject.AsObservable();
 
-        public IObservable<WebSocketCloseStatus> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
+        public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
         public IObservable<WebSocketExceptionDetail> ExceptionHappened => _exceptionSubject.AsObservable();
 
@@ -469,10 +469,9 @@ namespace RxWebSocket
                         //close handshake
                         if (result.CloseStatus != null)
                         {
-                            _closeMessageReceivedSubject.OnNext(result.CloseStatus.Value);
-                            var logMessage = FormatLogMessage($"Received: Type Close Message, {result.CloseStatus.Value}");
-                            _logger?.Log(logMessage);
-                            await CloseAsync(WebSocketCloseStatus.NormalClosure, logMessage, true).ConfigureAwait(false);
+                            _logger?.Log(FormatLogMessage($"Received: Close Message, Status: {result.CloseStatus.Value}, Description: {result.CloseStatusDescription}"));
+                            _closeMessageReceivedSubject.OnNext(new CloseMessage(result.CloseStatus.Value, result.CloseStatusDescription));
+                            await CloseAsync(WebSocketCloseStatus.NormalClosure, $"Response to the close message. Received close status: {result.CloseStatus.Value}", true).ConfigureAwait(false);
                         }
                         return;
                     }
