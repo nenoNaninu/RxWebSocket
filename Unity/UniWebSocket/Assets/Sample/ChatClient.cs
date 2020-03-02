@@ -14,9 +14,9 @@ namespace RxWebSocket.Sample
         private IWebSocketClient _webSocketClient;
         private readonly ILogger _logger;
         private readonly Subject<ChatMessage> _receivedSubject = new Subject<ChatMessage>();
-        private readonly Subject<CloseMessage> _errorSubject = new Subject<CloseMessage>();
+        private readonly Subject<CloseMessage> _closeSubject = new Subject<CloseMessage>();
         public IObservable<ChatMessage> OnReceived => _receivedSubject.AsObservable();
-        public IObservable<CloseMessage> OnError => _errorSubject.AsObservable();
+        public IObservable<CloseMessage> OnError => _closeSubject.AsObservable();
 
         public ChatClient(ILogger logger = null)
         {
@@ -32,8 +32,8 @@ namespace RxWebSocket.Sample
                 .Subscribe(x => _receivedSubject.OnNext(x));
 
             _webSocketClient.CloseMessageReceived
-                .Do(x => _logger?.Log($"DisconnectionHappened.Do()...{x}"))
-                .Subscribe(x => _errorSubject.OnNext(x));
+                .Do(x => _logger?.Log($"CloseMessageReceived.Do()...{x}"))
+                .Subscribe(x => _closeSubject.OnNext(x));
 
             _webSocketClient.ExceptionHappened
                 .Subscribe(x =>
@@ -53,7 +53,7 @@ namespace RxWebSocket.Sample
             {
                 _logger?.Log("ChatClient will be closed!!");
                 var closeTask = _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal");
-                _logger?.Log(_webSocketClient.WebSocketState.ToString());
+                _logger?.Log($"ChatClient: {_webSocketClient.WebSocketState.ToString()}");
                 await closeTask;
             }
         }
@@ -70,7 +70,7 @@ namespace RxWebSocket.Sample
         {
             await Close();
             _receivedSubject?.Dispose();
-            _errorSubject?.Dispose();
+            _closeSubject?.Dispose();
         }
     }
 }
