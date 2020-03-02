@@ -11,6 +11,6 @@ namespace RxWebSocket.Sample
         Task Close();
         Task Send(string message);
         IObservable<ChatMessage> OnReceived { get; }
-        IObservable<WebSocketCloseStatus> OnError { get; }
+        IObservable<CloseMessage> OnError { get; }
     }
 }

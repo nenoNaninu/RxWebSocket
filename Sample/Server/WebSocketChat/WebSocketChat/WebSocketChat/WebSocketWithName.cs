@@ -11,7 +11,7 @@ namespace WebSocketChat
         {
             WebSocketClient = websocket;
             Name = name;
-            WebSocketClient.Name = name;
+            WebSocketClient.Name = name + "_server";
         }
     }
 }

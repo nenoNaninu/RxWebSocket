@@ -14,9 +14,9 @@ namespace RxWebSocket.Sample
         private IWebSocketClient _webSocketClient;
         private readonly ILogger _logger;
         private readonly Subject<ChatMessage> _receivedSubject = new Subject<ChatMessage>();
-        private readonly Subject<WebSocketCloseStatus> _errorSubject = new Subject<WebSocketCloseStatus>();
+        private readonly Subject<CloseMessage> _errorSubject = new Subject<CloseMessage>();
         public IObservable<ChatMessage> OnReceived => _receivedSubject.AsObservable();
-        public IObservable<WebSocketCloseStatus> OnError => _errorSubject.AsObservable();
+        public IObservable<CloseMessage> OnError => _errorSubject.AsObservable();
 
         public ChatClient(ILogger logger = null)
         {
