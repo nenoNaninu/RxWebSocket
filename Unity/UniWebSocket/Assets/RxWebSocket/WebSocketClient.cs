@@ -256,6 +256,9 @@ namespace RxWebSocket
 
         public IObservable<WebSocketExceptionDetail> ExceptionHappened => _exceptionSubject.AsObservable();
 
+        public int BinaryQueueCount => _messagesBinaryToSendQueue.Count;
+        public int TextQueueCount => _messagesTextToSendQueue.Count;
+
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
         /// </summary>

@@ -44,6 +44,10 @@ namespace RxWebSocket
         /// Returns true if the client is already disposed.
         /// </summary>
         bool IsDisposed { get; }
+        
+        int BinaryQueueCount { get; }
+        
+        int TextQueueCount { get; }
 
         WebSocketState WebSocketState { get; }
 
