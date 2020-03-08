@@ -33,7 +33,7 @@ dotnet add package RxWebSocket
 # Requirements for Unity
 - [UniRx](https://github.com/neuecc/UniRx/releases)
 
-# How to use
+# Usage
 ## Client
 ```csharp
 #if Unity
@@ -43,13 +43,6 @@ Microsoft.Extensions.Logging.ILogger<T> logger;
 var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), logger.AsWebSocketLogger());
 #endif
 
-//binary receive
-webSocketClient.MessageReceived
-    .Where(x => x.MessageType == WebSocketMessageType.Binary)
-    .Select(x => x.Binary)
-    .Subscribe(x => DoSometine(x));
-
-//The above shortcut
 webSocketClient.BinaryMessageReceived
     .Subscribe(x => DoSomething(x));
     
@@ -62,7 +55,7 @@ webSocketClient.CloseMessageReceived
 webSocketClient.ExceptionHappened
     .Subscribe(x => DoSomething(x));
 
-//start connect and start listening in background thread.
+//connect and start listening in background thread.
 //await until websocket can connect.
 bool success = await webSocketClient.ConnectAndStartListening();
 

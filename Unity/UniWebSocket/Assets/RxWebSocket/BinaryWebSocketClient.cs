@@ -18,7 +18,7 @@ using UniRx;
 
 namespace RxWebSocket
 {
-    public partial class WebSocketClient : IWebSocketClient
+    public partial class BinaryWebSocketClient : IWebSocketClient
     {
         #region Member variable with state.
         private readonly ILogger _logger;
@@ -36,7 +36,7 @@ namespace RxWebSocket
         private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
-        private readonly BlockingCollection<SendMessage> _sendMessageQueue = new BlockingCollection<SendMessage>();
+        private readonly BlockingCollection<ArraySegment<byte>> _sendMessageQueue = new BlockingCollection<ArraySegment<byte>>();
 
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
@@ -67,7 +67,7 @@ namespace RxWebSocket
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
+        public BinaryWebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
             : this(url, MakeConnectionFactory(clientFactory))
         {
             _memoryPool = new MemoryPool(64 * 1024, 4 * 1024);
@@ -76,7 +76,7 @@ namespace RxWebSocket
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
+        public BinaryWebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
             : this(url, MakeConnectionFactory(clientFactory))
         {
             _logger = logger;
@@ -89,7 +89,7 @@ namespace RxWebSocket
         /// if lack of memory, memory pool is increase so allocation occur. </param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, int initialMemorySize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
+        public BinaryWebSocketClient(Uri url, int initialMemorySize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
             : this(url, MakeConnectionFactory(clientFactory))
         {
             _logger = logger;
@@ -106,14 +106,14 @@ namespace RxWebSocket
         /// </param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
+        public BinaryWebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
             : this(url, MakeConnectionFactory(clientFactory))
         {
             _logger = logger;
             _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
         }
 
-        private WebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        private BinaryWebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
@@ -138,7 +138,7 @@ namespace RxWebSocket
         /// if lack of memory, memory pool is increase so allocation occur. </param>
         /// <param name="logger"></param>
         /// <param name="connectionFactory">An optional factory for creating and connecting native Websockets. The method should return connected websocket.</param>
-        public WebSocketClient(Uri url, int initialMemorySize, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        public BinaryWebSocketClient(Uri url, int initialMemorySize, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
@@ -167,7 +167,7 @@ namespace RxWebSocket
         /// </param>
         /// <param name="logger"></param>
         /// <param name="connectionFactory">An optional factory for creating and connecting native Websockets. The method should return connected websocket.</param>
-        public WebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        public BinaryWebSocketClient(Uri url, int initialMemorySize, int receiveBufferSize, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
@@ -186,13 +186,12 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(initialMemorySize, receiveBufferSize, logger);
         }
 
-
         /// <summary>
         /// For server(ASP.NET Core)
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public WebSocketClient(WebSocket connectedSocket, ILogger logger = null)
+        public BinaryWebSocketClient(WebSocket connectedSocket, ILogger logger = null)
         {
             Url = null;
 
@@ -208,7 +207,7 @@ namespace RxWebSocket
         /// <param name="initialMemorySize"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public WebSocketClient(WebSocket connectedSocket, int initialMemorySize, ILogger logger = null)
+        public BinaryWebSocketClient(WebSocket connectedSocket, int initialMemorySize, ILogger logger = null)
         {
             Url = null;
 
@@ -225,7 +224,7 @@ namespace RxWebSocket
         /// <param name="receiveBufferSize"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public WebSocketClient(WebSocket connectedSocket, int initialMemorySize, int receiveBufferSize, ILogger logger = null)
+        public BinaryWebSocketClient(WebSocket connectedSocket, int initialMemorySize, int receiveBufferSize, ILogger logger = null)
         {
             Url = null;
 
@@ -277,7 +276,7 @@ namespace RxWebSocket
 
             IsStarted = true;
 
-
+            _logger?.Log(FormatLogMessage("Starting..."));
             var connectionTask = ConnectAndStartListeningInternal(Url, _cancellationCurrentJobs.Token);
 
             StartBackgroundThreadForSendingMessage();
