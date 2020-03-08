@@ -45,9 +45,7 @@ namespace RxWebSocket
         /// </summary>
         bool IsDisposed { get; }
         
-        int BinaryQueueCount { get; }
-        
-        int TextQueueCount { get; }
+        int QueueCount { get; }
 
         WebSocketState WebSocketState { get; }
 
@@ -103,12 +101,16 @@ namespace RxWebSocket
         /// <param name="message">Binary message to be sent</param>
         void Send(byte[] message);
 
+        void Send(byte[] message, WebSocketMessageType messageType);
+
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         void Send(ArraySegment<byte> message);
+        
+        void Send(ArraySegment<byte> message, WebSocketMessageType messageType);
 
         /// <summary>
         /// Send message to the websocket channel. 
@@ -124,11 +126,15 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         Task SendInstant(byte[] message);
 
+        Task SendInstant(byte[] message,  WebSocketMessageType messageType);
+        
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// It doesn't use a queue, 
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(ArraySegment<byte> message);
+
+        Task SendInstant(ArraySegment<byte> message,  WebSocketMessageType messageType);
     }
 }
