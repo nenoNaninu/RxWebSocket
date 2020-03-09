@@ -34,10 +34,16 @@ dotnet add package RxWebSocket
 - [UniRx](https://github.com/neuecc/UniRx/releases)
 
 # Usage
+We prepared two classes, `WebSocketClient` and `BinaryWebSocketClient`.
+`WebSocketClient` is common, but if you only send binary type, you can use `BinaryWebSocketClient`. 
+`BinaryWebSocketClient` can send only binary type, but has less allocation.
+
 ## Client
 ```csharp
 #if Unity
 var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
+//or
+var binaryWebSocketClient = new BinaryWebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
 #else 
 Microsoft.Extensions.Logging.ILogger<T> logger;
 var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), logger.AsWebSocketLogger());
@@ -57,23 +63,27 @@ webSocketClient.ExceptionHappened
 
 //connect and start listening in background thread.
 //await until websocket can connect.
-bool success = await webSocketClient.ConnectAndStartListening();
+try
+{
+    await webSocketClient.ConnectAndStartListening();
 
-//send bin
-byte[] array = MakeSomeArray();
-webSocketClient.Send(array);
+    //send bin
+    byte[] array = MakeSomeArray();
+    webSocketClient.Send(array);
 
-//send text
-//The Send function guarantees the transmission order using queue.
-//It doesn't wait for the transmission to complete.
-webSocketClient.Send("string or byte[]");
+    //send text
+    //The Send function guarantees the transmission order using queue.
+    //It doesn't wait for the transmission to complete.
+    webSocketClient.Send("string or byte[]");
 
-//The SendInstant function ignores the queue used inside the Send function and sends it immediately.
-//await for transmission to complete.
-await webSocketClient.SendInstant("string or byte[]");
+    //The SendInstant function ignores the queue used inside the Send function and sends it immediately.
+    //await for transmission to complete.
+    await webSocketClient.SendInstant("string or byte[]");
 
-//You can decide whether to dispose at the same time as Close with the last bool parameter.
-await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "description", true);
+    //You can decide whether to dispose at the same time as Close with the last bool parameter.
+    await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "description", true);
+}
+
 ```
 ## Server ([ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet))
 ```csharp

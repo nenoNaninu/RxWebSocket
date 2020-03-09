@@ -30,12 +30,6 @@ namespace RxWebSocket
         /// </summary>
         string Name { get; set; }
 
-        /// <summary>
-        /// Returns true if ConnectAndStartListening() method was already called.
-        /// Returns False if ConnectAndStartListening is not called or already call Dispose().
-        /// </summary>
-        bool IsStarted { get; }
-
         bool IsOpen { get; }
 
         bool IsClosed { get; }
@@ -68,7 +62,7 @@ namespace RxWebSocket
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
-        Task<bool> ConnectAndStartListening();
+        Task ConnectAndStartListening();
 
         /// <summary>
         /// close websocket connection.
@@ -77,7 +71,7 @@ namespace RxWebSocket
         /// <param name="statusDescription"></param>
         /// <param name="dispose"></param>
         /// <returns>Returns true if close was successful</returns>
-        Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose);
+        Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose);
         
         /// <summary>
         /// close websocket connection.
@@ -85,7 +79,7 @@ namespace RxWebSocket
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
         /// <returns>Returns true if close was successful</returns>
-        Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription);
+        Task CloseAsync(WebSocketCloseStatus status, string statusDescription);
 
         /// <summary>
         /// Send message to the websocket channel. 

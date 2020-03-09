@@ -54,32 +54,6 @@
       </e>
       <e p="packages" t="ExcludeRecursive" />
       <e p="Program.cs" t="Include" />
-      <e p="RxWebSocket" t="Include">
-        <e p="BinaryWebSocketClient.cs" t="Include" />
-        <e p="BinaryWebSocketClient.Sending.cs" t="Include" />
-        <e p="CloseMessage.cs" t="Include" />
-        <e p="ErrorType.cs" t="Include" />
-        <e p="Exceptions" t="Include">
-          <e p="WebSocketBadInputException.cs" t="Include" />
-          <e p="WebSocketException.cs" t="Include" />
-        </e>
-        <e p="IWebSocketClient.cs" t="Include" />
-        <e p="Logging" t="Include">
-          <e p="ILogger.cs" t="Include" />
-        </e>
-        <e p="MemoryPool.cs" t="Include" />
-        <e p="ResponseMessage.cs" t="Include" />
-        <e p="SendMessage.cs" t="Include" />
-        <e p="Threading" t="Include">
-          <e p="AsyncLock.cs" t="Include" />
-        </e>
-        <e p="Validations" t="Include">
-          <e p="ValidationUtils.cs" t="Include" />
-        </e>
-        <e p="WebSocketClient.cs" t="Include" />
-        <e p="WebSocketClient.Sending.cs" t="Include" />
-        <e p="WebSocketExceptionDetail.cs" t="Include" />
-      </e>
     </e>
   </component>
 </project>

@@ -8,7 +8,7 @@ using RxWebSocket.Exceptions;
 using RxWebSocket.Threading;
 using RxWebSocket.Validations;
 using RxWebSocket.Logging;
-
+using UniRx.InternalUtil;
 #if NETSTANDARD2_1 || NETSTANDARD2_0
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
@@ -27,6 +27,7 @@ namespace RxWebSocket
 
         private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
 
+        private readonly AsyncLock _openLocker = new AsyncLock();
         private readonly AsyncLock _sendLocker = new AsyncLock();
         private readonly AsyncLock _closeLocker = new AsyncLock();
 
@@ -49,12 +50,6 @@ namespace RxWebSocket
         /// For logging purpose.
         /// </summary>
         public string Name { get; set; } = "CLIENT";
-
-        /// <summary>
-        /// Returns true if ConnectAndStartListening() method was already called.
-        /// Returns False if ConnectAndStartListening() is not called or already called Dispose().
-        /// </summary>
-        public bool IsStarted { get; private set; }
 
         public bool IsDisposed { get; private set; }
 
@@ -259,32 +254,31 @@ namespace RxWebSocket
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
-        /// <returns>return true if successful</returns>
-        public async Task<bool> ConnectAndStartListening()
+        public async Task ConnectAndStartListening()
         {
-            if (IsStarted)
+            using (await _openLocker.LockAsync().ConfigureAwait(false))
             {
-                _logger?.Log(FormatLogMessage("Client already started, ignoring..."));
-                return false;
+                if (IsOpen)
+                {
+                    _logger?.Warn(FormatLogMessage("BinaryWebSocketClient is already open."));
+                    return;
+                }
+
+                if (IsDisposed)
+                {
+                    _logger?.Error(FormatLogMessage("BinaryWebSocketClient is already disposed."));
+                    throw new ObjectDisposedException("BinaryWebSocketClient is already disposed.");
+                }
+
+                var connectionTask = ConnectAndStartListeningInternal(Url, _cancellationCurrentJobs.Token);
+
+                StartBackgroundThreadForSendingMessage();
+
+                await connectionTask.ConfigureAwait(false);
             }
-
-            if (IsDisposed)
-            {
-                _logger?.Log(FormatLogMessage("Client already disposed, ignoring..."));
-                return false;
-            }
-
-            IsStarted = true;
-
-            _logger?.Log(FormatLogMessage("Starting..."));
-            var connectionTask = ConnectAndStartListeningInternal(Url, _cancellationCurrentJobs.Token);
-
-            StartBackgroundThreadForSendingMessage();
-
-            return await connectionTask.ConfigureAwait(false);
         }
 
-        private async Task<bool> ConnectAndStartListeningInternal(Uri uri, CancellationToken token)
+        private async Task ConnectAndStartListeningInternal(Uri uri, CancellationToken token)
         {
             try
             {
@@ -296,13 +290,12 @@ namespace RxWebSocket
                 _logger?.Log(FormatLogMessage("Start Listening..."));
                 Wait = Listen(_socket, token);
                 LastReceivedTime = DateTime.UtcNow;
-                return true;
             }
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Exception while connecting. detail: {e.Message}"));
                 _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Start));
-                return false;
+                throw;
             }
         }
 
@@ -341,10 +334,7 @@ namespace RxWebSocket
             {
                 _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
                 _exceptionSubject?.OnNext(new WebSocketExceptionDetail(e, ErrorType.Dispose));
-            }
-            finally
-            {
-                IsStarted = false;
+                throw;
             }
         }
 
@@ -358,7 +348,7 @@ namespace RxWebSocket
         /// If false, there is a problem.
         /// This function is equivalent to CloseAsync(status, statusDescription, true)
         /// </returns>
-        public Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription)
+        public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
         }
@@ -372,23 +362,22 @@ namespace RxWebSocket
         /// <returns>true is normal.
         /// If false, there is a problem.
         /// </returns>
-        public async Task<bool> CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
+        public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
             // prevent sending multiple disconnect requests.
             using (await _closeLocker.LockAsync().ConfigureAwait(false))
             {
                 if (IsClosed)
                 {
-                    return true;
+                    return;
                 }
 
                 if (_socket == null ||
                     _socket.State == WebSocketState.Aborted ||
                     _socket.State == WebSocketState.None)
                 {
-                    _logger?.Error(FormatLogMessage($"Called CloseAsync, but websocket state is not correct."));
-                    IsStarted = false;
-                    return false;
+                    _logger?.Warn(FormatLogMessage($"Called CloseAsync, but websocket state is {(_socket == null ?  "null" : _socket.State.ToString())}. It is not correct."));
+                    return;
                 }
 
                 try
@@ -401,17 +390,13 @@ namespace RxWebSocket
                         this.Dispose();
                     }
 
-                    return true;
+                    return;
                 }
                 catch (Exception e)
                 {
                     _logger?.Error(e, FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
                     _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Close));
-                    return false;
-                }
-                finally
-                {
-                    IsStarted = false;
+                    throw;
                 }
             }
         }
