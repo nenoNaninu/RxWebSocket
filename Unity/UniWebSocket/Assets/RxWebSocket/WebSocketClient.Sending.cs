@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Validations;
@@ -44,7 +45,7 @@ namespace RxWebSocket
         /// <param name="message">Binary message to be sent</param>
         public void Send(ArraySegment<byte> message)
         {
-            if (ValidationUtils.ValidateInput(message))
+            if (ValidationUtils.ValidateInput(ref message))
             {
                 _sendMessageQueue.Add(new SendMessage(message, WebSocketMessageType.Binary));
             }
@@ -80,7 +81,7 @@ namespace RxWebSocket
         /// <param name="messageType"></param>
         public void Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
-            if (ValidationUtils.ValidateInput(message))
+            if (ValidationUtils.ValidateInput(ref message))
             {
                 _sendMessageQueue.Add(new SendMessage(message, messageType));
             }
@@ -137,7 +138,7 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(ArraySegment<byte> message)
         {
-            if (ValidationUtils.ValidateInput(message))
+            if (ValidationUtils.ValidateInput(ref message))
             {
                 return SendInternalSynchronized(new SendMessage(message, WebSocketMessageType.Binary));
             }
@@ -147,7 +148,7 @@ namespace RxWebSocket
 
         public Task SendInstant(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
-            if (ValidationUtils.ValidateInput(message))
+            if (ValidationUtils.ValidateInput(ref message))
             {
                 return SendInternalSynchronized(new SendMessage(message, messageType));
             }
@@ -201,27 +202,23 @@ namespace RxWebSocket
         }
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async Task SendInternalSynchronized(SendMessage message)
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                await SendInternal(message).ConfigureAwait(false);
+                if (!IsOpen)
+                {
+                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
+                    return;
+                }
+
+                _logger?.Log(FormatLogMessage($"Sending:  {message}"));
+
+                await _socket
+                    .SendAsync(message.Bytes, message.MessageType, true, _cancellationCurrentJobs.Token)
+                    .ConfigureAwait(false);
             }
-        }
-
-        private async Task SendInternal(SendMessage message)
-        {
-            if (!IsOpen)
-            {
-                _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
-                return;
-            }
-
-            _logger?.Log(FormatLogMessage($"Sending:  {message}"));
-
-            await _socket
-                .SendAsync(message.Bytes, message.MessageType, true, _cancellationCurrentJobs.Token)
-                .ConfigureAwait(false);
         }
     }
 }
