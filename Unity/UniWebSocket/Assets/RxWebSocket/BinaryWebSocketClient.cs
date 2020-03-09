@@ -8,7 +8,7 @@ using RxWebSocket.Exceptions;
 using RxWebSocket.Threading;
 using RxWebSocket.Validations;
 using RxWebSocket.Logging;
-using UniRx.InternalUtil;
+
 #if NETSTANDARD2_1 || NETSTANDARD2_0
 using System.Reactive.Subjects;
 using System.Reactive.Linq;

@@ -2,7 +2,7 @@ using System.Net.WebSockets;
 
 namespace RxWebSocket
 {
-    public struct CloseMessage
+    public readonly struct CloseMessage
     {
         public readonly string CloseStatusDescription;
         public readonly WebSocketCloseStatus CloseStatus;
