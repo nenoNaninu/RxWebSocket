@@ -49,7 +49,7 @@ namespace RxWebSocket
             }
             else
             {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is 0 Count. Please correct it.");
+                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the Send function is 0 Count. Please correct it.");
             }
         }
 
@@ -84,7 +84,7 @@ namespace RxWebSocket
         {
             if (!ValidationUtils.ValidateInput(ref message))
             {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
+                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the Send function is 0 Count. Please correct it.");
             }
 
             if (messageType != WebSocketMessageType.Binary)
@@ -191,7 +191,7 @@ namespace RxWebSocket
                     catch (Exception e)
                     {
                         _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendBinary));
+                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
                     }
                 }
             }
@@ -212,7 +212,7 @@ namespace RxWebSocket
                 }
 
                 _logger?.Error(e, FormatLogMessage($"Sending binary thread failed, error: {e.Message}."));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.BinaryQueue));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendQueue));
             }
         }
 

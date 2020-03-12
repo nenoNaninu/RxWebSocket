@@ -34,9 +34,12 @@ dotnet add package RxWebSocket
 - [UniRx](https://github.com/neuecc/UniRx/releases)
 
 # Usage
-We prepared two classes, `WebSocketClient` and `BinaryWebSocketClient`.
-`WebSocketClient` is common, but if you only send binary type, you can use `BinaryWebSocketClient`. 
-`BinaryWebSocketClient` can send only binary type, but has less allocation.
+We prepared two classes.
+- `WebSocketClient`
+  - it is common.
+- `BinaryWebSocketClient`
+    - if you only send binary type, you can use this. 
+    `BinaryWebSocketClient` can send only binary type, but has less allocation.
 
 ## Client
 ```csharp

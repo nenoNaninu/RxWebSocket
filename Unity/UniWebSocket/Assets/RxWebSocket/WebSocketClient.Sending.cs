@@ -51,7 +51,7 @@ namespace RxWebSocket
             }
             else
             {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is 0 Count. Please correct it.");
+                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the Send function is 0 Count. Please correct it.");
             }
         }
 
@@ -87,7 +87,7 @@ namespace RxWebSocket
             }
             else
             {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is 0 Count. Please correct it.");
+                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the Send function is 0 Count. Please correct it.");
             }
         }
 
@@ -153,7 +153,7 @@ namespace RxWebSocket
                 return SendInternalSynchronized(new SendMessage(message, messageType));
             }
 
-            throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
+            throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
         }
 
         private async Task SendMessageFromQueue()
@@ -169,7 +169,7 @@ namespace RxWebSocket
                     catch (Exception e)
                     {
                         _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendBinary));
+                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
                     }
                 }
             }
@@ -189,8 +189,8 @@ namespace RxWebSocket
                     return;
                 }
 
-                _logger?.Error(e, FormatLogMessage($"Sending binary thread failed, error: {e.Message}."));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.BinaryQueue));
+                _logger?.Error(e, FormatLogMessage($"Sending message thread failed, error: {e.Message}."));
+                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendQueue));
             }
         }
 
@@ -200,8 +200,7 @@ namespace RxWebSocket
             Task.Factory.StartNew(_ => SendMessageFromQueue(), TaskCreationOptions.LongRunning, _cancellationAllJobs.Token);
 #pragma warning restore 4014
         }
-
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async Task SendInternalSynchronized(SendMessage message)
         {

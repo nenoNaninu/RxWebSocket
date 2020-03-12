@@ -294,7 +294,6 @@ namespace RxWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Exception while connecting. detail: {e.Message}"));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Start));
                 throw;
             }
         }
@@ -314,7 +313,7 @@ namespace RxWebSocket
                 _cancellationAllJobs.Cancel();
                 _cancellationCurrentJobs.Cancel();
 
-                if (!this.IsClosed)
+                if (!IsClosed)
                 {
                     _socket?.Abort();
                 }
@@ -333,7 +332,6 @@ namespace RxWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
-                _exceptionSubject?.OnNext(new WebSocketExceptionDetail(e, ErrorType.Dispose));
                 throw;
             }
         }
@@ -395,7 +393,6 @@ namespace RxWebSocket
                 catch (Exception e)
                 {
                     _logger?.Error(e, FormatLogMessage($"Error while stopping client, message: '{e.Message}'"));
-                    _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Close));
                     throw;
                 }
             }
@@ -481,7 +478,10 @@ namespace RxWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Error while listening to websocket stream, error: '{e.Message}'"));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Listen));
+                if (!IsDisposed)
+                {
+                    _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Listen));
+                }
             }
         }
 

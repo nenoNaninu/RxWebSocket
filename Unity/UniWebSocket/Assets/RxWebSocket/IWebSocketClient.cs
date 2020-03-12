@@ -33,10 +33,7 @@ namespace RxWebSocket
         bool IsOpen { get; }
 
         bool IsClosed { get; }
-
-        /// <summary>
-        /// Returns true if the client is already disposed.
-        /// </summary>
+        
         bool IsDisposed { get; }
         
         int QueueCount { get; }

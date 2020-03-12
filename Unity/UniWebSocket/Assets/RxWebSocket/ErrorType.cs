@@ -10,5 +10,7 @@ namespace RxWebSocket
         SendText = 1 << 5,
         BinaryQueue = 1 << 6,
         TextQueue = 1 << 7,
+        SendQueue = 1 << 8,
+        Send = 1 << 9,
     }
 }
