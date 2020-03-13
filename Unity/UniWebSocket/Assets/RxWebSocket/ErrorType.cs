@@ -2,15 +2,9 @@ namespace RxWebSocket
 {
     public enum ErrorType
     {
-        Start = 1,
-        Close = 1 << 1,
-        Dispose = 1 << 2,
-        Listen = 1 << 3,
-        SendBinary = 1 << 4,
-        SendText = 1 << 5,
-        BinaryQueue = 1 << 6,
-        TextQueue = 1 << 7,
-        SendQueue = 1 << 8,
-        Send = 1 << 9,
+        Listen = 1,
+        SendQueue = 1 << 1,
+        Send = 1 << 2,
+        CloseMessageReceive = 1 << 3
     }
 }

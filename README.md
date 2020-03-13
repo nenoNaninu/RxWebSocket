@@ -3,23 +3,11 @@ RxWebSocket is a WebSocket client for Unity and .NET Standard2.0/2.1. Since Unit
 RxWebSocket is a wrapper of ClientWebSocket for easy handling. RxWebSocket was created with reference to the [websocket-client](https://github.com/Marfusios/websocket-client) (Released under [the MIT License](https://github.com/Marfusios/websocket-client/blob/master/LICENSE)).
 
 # Tested platform(Unity)
-- UWP
-  -  ⭕️: IL2CPP
-     -  .NET Standard 2.0 & .NET 4.x
-  -  ❌: .NET Backend
-  
-- iOS
-  - ⭕️: IL2CPP
-    - .NET Standard 2.0
-
-- Mac OSX Standalone
-  -  ⭕️: Mono
-     -  .NET Standard.0 & .NET 4.x
-  -  ❌: IL2CPP
-
-- Windows10 Standalone
-  -  ⭕️: Mono
-     -  .NET Standard 2.0 & .NET 4.x
+| &nbsp; |  UWP  |  iOS  | Mac OSX Standalone | Windows10 Standalone |
+| ---- | ---- | ---- | ---- | ---- |
+| IL2CPP | ⭕️ | ⭕️ | &nbsp; | &nbsp; |
+| Mono <br>(.NET Standard.0 & .NET 4.x) | &nbsp; | &nbsp; | ⭕️ | ⭕️ |
+| .NET Backend | ❌ | &nbsp; | &nbsp; | &nbsp; |
 
 # Download
 ## Unity
@@ -61,13 +49,15 @@ webSocketClient.TextMessageReceived
 webSocketClient.CloseMessageReceived
     .Subscribe(x => DoSomething(x));
 
+//Issued when an exception occurs in processing of the background thread(receiving and sending). 
 webSocketClient.ExceptionHappened
     .Subscribe(x => DoSomething(x));
 
-//connect and start listening in background thread.
-//await until websocket can connect.
+
 try
 {
+    //connect and start listening in background thread.
+    //await until websocket can connect.
     await webSocketClient.ConnectAndStartListening();
 
     //send bin
@@ -85,6 +75,9 @@ try
 
     //You can decide whether to dispose at the same time as Close with the last bool parameter.
     await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "description", true);
+}
+catch
+{
 }
 
 ```

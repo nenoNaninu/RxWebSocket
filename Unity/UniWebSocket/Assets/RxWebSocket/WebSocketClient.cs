@@ -375,7 +375,7 @@ namespace RxWebSocket
                     _socket.State == WebSocketState.Aborted ||
                     _socket.State == WebSocketState.None)
                 {
-                    _logger?.Warn(FormatLogMessage($"Called CloseAsync, but websocket state is {(_socket == null ?  "null" : _socket.State.ToString())}. It is not correct."));
+                    _logger?.Warn(FormatLogMessage($"Called CloseAsync, but websocket state is {(_socket == null ? "null" : _socket.State.ToString())}. It is not correct."));
                     return;
                 }
 
@@ -455,7 +455,18 @@ namespace RxWebSocket
                         {
                             _logger?.Log(FormatLogMessage($"Received: Close Message, Status: {result.CloseStatus.Value}, Description: {result.CloseStatusDescription}"));
                             _closeMessageReceivedSubject.OnNext(new CloseMessage(result.CloseStatus.Value, result.CloseStatusDescription));
-                            await CloseAsync(WebSocketCloseStatus.NormalClosure, $"Response to the close message. Received close status: {result.CloseStatus.Value}", true).ConfigureAwait(false);
+                            try
+                            {
+                                await CloseAsync(WebSocketCloseStatus.NormalClosure, $"Response to the close message. Received close status: {result.CloseStatus.Value}", true).ConfigureAwait(false);
+                            }
+                            catch (Exception e)
+                            {
+                                _logger?.Error(e, FormatLogMessage($"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
+                                if (!IsDisposed)
+                                {
+                                    _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.CloseMessageReceive));
+                                }
+                            }
                         }
                         return;
                     }
