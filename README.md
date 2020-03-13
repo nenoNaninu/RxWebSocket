@@ -74,7 +74,7 @@ try
     await webSocketClient.SendInstant("string or byte[]");
 
     //You can decide whether to dispose at the same time as Close with the last bool parameter.
-    await _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "description", true);
+    await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "description", true);
 }
 catch
 {
