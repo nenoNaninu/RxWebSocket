@@ -66,7 +66,7 @@ namespace RxWebSocket
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         /// <param name="sendMessageQueue"></param>
         public WebSocketClient(Uri url, Channel<SendMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryOption.Default, sendMessageQueue, null, MakeConnectionFactory(clientFactory))
+            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, null, MakeConnectionFactory(clientFactory))
         {
         }
 
@@ -75,23 +75,23 @@ namespace RxWebSocket
         /// <param name="sendMessageQueue"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, ILogger logger, Channel<SendMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryOption.Default, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="receivingMemoryOption"></param>
+        /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="sendMessageQueue"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, ReceivingMemoryOption receivingMemoryOption, ILogger logger = null, Channel<SendMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryOption, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public WebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SendMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, receivingMemoryConfig, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
         public WebSocketClient(
             Uri url, 
-            ReceivingMemoryOption receivingMemoryOption, 
+            ReceivingMemoryConfig receivingMemoryConfig, 
             Channel<SendMessage> sendMessageQueue, 
             ILogger logger, 
             Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
@@ -104,7 +104,7 @@ namespace RxWebSocket
             Url = url;
 
             _logger = logger;
-            _memoryPool = new MemoryPool(receivingMemoryOption.InitialMemorySize, receivingMemoryOption.MarginSize, logger);
+            _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             _connectionFactory = connectionFactory ?? (async (uri, token) =>
             {
@@ -134,7 +134,7 @@ namespace RxWebSocket
             _logger = logger;
             _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
 
-            _memoryPool = new MemoryPool(ReceivingMemoryOption.Default.InitialMemorySize, ReceivingMemoryOption.Default.MarginSize, logger);
+            _memoryPool = new MemoryPool(ReceivingMemoryConfig.Default.InitialMemorySize, ReceivingMemoryConfig.Default.MarginSize, logger);
 
             _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SendMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sendMessageQueueReader = _sendMessageQueue.Reader;
@@ -144,18 +144,18 @@ namespace RxWebSocket
         /// <summary>
         /// For server(ASP.NET Core)
         /// </summary>
-        /// <param name="receivingMemoryOption"></param>
+        /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
         /// <param name="sendMessageQueue"></param>
-        public WebSocketClient(WebSocket connectedSocket, ReceivingMemoryOption receivingMemoryOption, ILogger logger = null, Channel<SendMessage> sendMessageQueue = null)
+        public WebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SendMessage> sendMessageQueue = null)
         {
             Url = null;
 
             _logger = logger;
             _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
 
-            _memoryPool = new MemoryPool(receivingMemoryOption.InitialMemorySize, receivingMemoryOption.MarginSize, logger);
+            _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SendMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sendMessageQueueReader = _sendMessageQueue.Reader;

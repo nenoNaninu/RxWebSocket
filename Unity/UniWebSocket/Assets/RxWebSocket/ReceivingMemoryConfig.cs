@@ -1,8 +1,8 @@
 ﻿namespace RxWebSocket
 {
-    public struct ReceivingMemoryOption
+    public struct ReceivingMemoryConfig
     {
-        public static ReceivingMemoryOption Default { get; } = new ReceivingMemoryOption(64 * 1024, 4 * 1024);
+        public static ReceivingMemoryConfig Default { get; } = new ReceivingMemoryConfig(64 * 1024, 4 * 1024);
 
         /// <summary>
         /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
@@ -16,13 +16,13 @@
         /// </summary>
         public readonly int MarginSize;
 
-        public ReceivingMemoryOption(int initialMemorySize, int marginSize)
+        public ReceivingMemoryConfig(int initialMemorySize, int marginSize)
         {
             InitialMemorySize = initialMemorySize;
             MarginSize = marginSize;
         }
 
-        public ReceivingMemoryOption(int initialMemorySize)
+        public ReceivingMemoryConfig(int initialMemorySize)
         {
             InitialMemorySize = initialMemorySize;
             MarginSize = 4 * 1024;
