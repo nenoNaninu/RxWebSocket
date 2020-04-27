@@ -13,7 +13,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _sendMessageQueue.Add(new SendMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
+                _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
             }
             else
             {
@@ -30,7 +30,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _sendMessageQueue.Add(new SendMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
+                _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
             }
             else
             {
@@ -47,7 +47,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                _sendMessageQueue.Add(new SendMessage(message, WebSocketMessageType.Binary));
+                _sendMessageQueueWriter.TryWrite(new SendMessage(message, WebSocketMessageType.Binary));
             }
             else
             {
@@ -65,7 +65,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _sendMessageQueue.Add(new SendMessage(new ArraySegment<byte>(message), messageType));
+                _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(message), messageType));
             }
             else
             {
@@ -83,7 +83,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                _sendMessageQueue.Add(new SendMessage(message, messageType));
+                _sendMessageQueueWriter.TryWrite(new SendMessage(message, messageType));
             }
             else
             {
@@ -160,16 +160,21 @@ namespace RxWebSocket
         {
             try
             {
-                foreach (var message in _sendMessageQueue.GetConsumingEnumerable(_cancellationAllJobs.Token))
+                while (await _sendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    try
+                    while (_sendMessageQueueReader.TryRead(out var message))
                     {
-                        await SendInternalSynchronized(message).ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
+
+                        try
+                        {
+                            await SendInternalSynchronized(message).ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
+                            _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
+                        }
+
                     }
                 }
             }
@@ -200,7 +205,7 @@ namespace RxWebSocket
             Task.Factory.StartNew(_ => SendMessageFromQueue(), TaskCreationOptions.LongRunning, _cancellationAllJobs.Token);
 #pragma warning restore 4014
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private async Task SendInternalSynchronized(SendMessage message)
         {

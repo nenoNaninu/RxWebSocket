@@ -35,15 +35,8 @@ namespace RxWebSocket
         bool IsClosed { get; }
         
         bool IsDisposed { get; }
-        
-        int QueueCount { get; }
 
         WebSocketState WebSocketState { get; }
-
-        /// <summary>
-        /// Returns currently used native websocket client.
-        /// </summary>
-        ClientWebSocket NativeClient { get; }
 
         /// <summary>
         /// Returns currently used native websocket.
