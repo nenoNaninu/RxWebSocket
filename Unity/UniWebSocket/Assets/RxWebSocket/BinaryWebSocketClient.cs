@@ -59,7 +59,7 @@ namespace RxWebSocket
 
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
-        public Task Wait { get; private set; }
+        public Task WaitUntilClose { get; private set; }
         #endregion
 
         /// <param name="url">Target websocket url (wss://)</param>
@@ -219,7 +219,7 @@ namespace RxWebSocket
                 }
                 _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
                 _logger?.Log(FormatLogMessage("Start Listening..."));
-                Wait = Listen(_socket, token);
+                WaitUntilClose = Listen(_socket, token);
                 LastReceivedTime = DateTime.UtcNow;
             }
             catch (Exception e)
