@@ -89,7 +89,7 @@ namespace RxWebSocket
         {
         }
 
-        private WebSocketClient(
+        public WebSocketClient(
             Uri url, 
             ReceivingMemoryOption receivingMemoryOption, 
             Channel<SendMessage> sendMessageQueue, 
@@ -147,6 +147,7 @@ namespace RxWebSocket
         /// <param name="receivingMemoryOption"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
+        /// <param name="sendMessageQueue"></param>
         public WebSocketClient(WebSocket connectedSocket, ReceivingMemoryOption receivingMemoryOption, ILogger logger = null, Channel<SendMessage> sendMessageQueue = null)
         {
             Url = null;

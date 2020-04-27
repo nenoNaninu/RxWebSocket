@@ -28,7 +28,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _sendMessageQueue.Add(new ArraySegment<byte>(message));
+                _sendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -45,7 +45,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                _sendMessageQueue.Add(message);
+                _sendMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -71,7 +71,7 @@ namespace RxWebSocket
                 throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
             }
 
-            _sendMessageQueue.Add(new ArraySegment<byte>(message));
+            _sendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace RxWebSocket
                 throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
             }
 
-            _sendMessageQueue.Add(message);
+            _sendMessageQueueWriter.TryWrite(message);
         }
 
         /// <summary>
@@ -169,29 +169,32 @@ namespace RxWebSocket
         {
             try
             {
-                foreach (var message in _sendMessageQueue.GetConsumingEnumerable(_cancellationAllJobs.Token))
+                while (await _sendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    try
+                    while (_sendMessageQueueReader.TryRead(out var message))
                     {
-                        using (await _sendLocker.LockAsync().ConfigureAwait(false))
+                        try
                         {
-                            if (!IsOpen)
+                            using (await _sendLocker.LockAsync().ConfigureAwait(false))
                             {
-                                _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
-                                continue;
+                                if (!IsOpen)
+                                {
+                                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
+                                    continue;
+                                }
+
+                                _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Count}"));
+
+                                await _socket
+                                    .SendAsync(message, WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
+                                    .ConfigureAwait(false);
                             }
-
-                            _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Count}"));
-
-                            await _socket
-                                .SendAsync(message, WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
-                                .ConfigureAwait(false);
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                        _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
+                        catch (Exception e)
+                        {
+                            _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
+                            _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
+                        }
                     }
                 }
             }

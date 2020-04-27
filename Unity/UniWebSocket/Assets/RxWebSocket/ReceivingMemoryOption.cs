@@ -21,5 +21,11 @@
             InitialMemorySize = initialMemorySize;
             MarginSize = marginSize;
         }
+
+        public ReceivingMemoryOption(int initialMemorySize)
+        {
+            InitialMemorySize = initialMemorySize;
+            MarginSize = 4 * 1024;
+        }
     }
 }

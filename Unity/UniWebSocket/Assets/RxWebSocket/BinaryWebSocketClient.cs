@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Threading;
@@ -37,7 +37,9 @@ namespace RxWebSocket
         private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
-        private readonly BlockingCollection<ArraySegment<byte>> _sendMessageQueue = new BlockingCollection<ArraySegment<byte>>();
+        private readonly Channel<ArraySegment<byte>> _sendMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _sendMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _sendMessageQueueWriter;
 
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
@@ -62,34 +64,37 @@ namespace RxWebSocket
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public BinaryWebSocketClient(Uri url, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectionFactory(clientFactory))
+        /// <param name="sendMessageQueue"></param>
+        public BinaryWebSocketClient(Uri url, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryOption.Default, sendMessageQueue, null, MakeConnectionFactory(clientFactory))
         {
-            _memoryPool = new MemoryPool(ReceivingMemoryOption.Default.InitialMemorySize, ReceivingMemoryOption.Default.MarginSize);
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
+        /// <param name="sendMessageQueue"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public BinaryWebSocketClient(Uri url, ILogger logger, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectionFactory(clientFactory))
+        public BinaryWebSocketClient(Uri url, ILogger logger, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryOption.Default, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
-            _logger = logger;
-            _memoryPool = new MemoryPool(ReceivingMemoryOption.Default.InitialMemorySize, ReceivingMemoryOption.Default.MarginSize, logger);
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="receivingMemoryOption"></param>
         /// <param name="logger"></param>
+        /// <param name="sendMessageQueue"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public BinaryWebSocketClient(Uri url, ReceivingMemoryOption receivingMemoryOption, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, MakeConnectionFactory(clientFactory))
+        public BinaryWebSocketClient(Uri url, ReceivingMemoryOption receivingMemoryOption, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, receivingMemoryOption, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
-            _logger = logger;
-            _memoryPool = new MemoryPool(receivingMemoryOption.InitialMemorySize, receivingMemoryOption.MarginSize, logger);
         }
 
-        private BinaryWebSocketClient(Uri url, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+        public BinaryWebSocketClient(
+            Uri url,
+            ReceivingMemoryOption receivingMemoryOption,
+            Channel<ArraySegment<byte>> sendMessageQueue,
+            ILogger logger,
+            Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
@@ -97,6 +102,10 @@ namespace RxWebSocket
             }
 
             Url = url;
+
+            _logger = logger;
+            _memoryPool = new MemoryPool(receivingMemoryOption.InitialMemorySize, receivingMemoryOption.MarginSize, logger);
+
             _connectionFactory = connectionFactory ?? (async (uri, token) =>
             {
                 var client = new ClientWebSocket
@@ -106,29 +115,10 @@ namespace RxWebSocket
                 await client.ConnectAsync(uri, token).ConfigureAwait(false);
                 return client;
             });
-        }
 
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="receivingMemoryOption"></param>
-        /// <param name="logger"></param>
-        /// <param name="connectionFactory">An optional factory for creating and connecting native Websockets. The method should return connected websocket.</param>
-        public BinaryWebSocketClient(Uri url, ReceivingMemoryOption receivingMemoryOption, ILogger logger, Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
-        {
-            if (!ValidationUtils.ValidateInput(url))
-            {
-                throw new WebSocketBadInputException($"url is null. Please correct it.");
-            }
-
-            if (!ValidationUtils.ValidateInput(connectionFactory))
-            {
-                throw new WebSocketBadInputException($"connectionFactory is null. Please correct it.");
-            }
-
-            Url = url;
-
-            _logger = logger;
-            _connectionFactory = connectionFactory;
-            _memoryPool = new MemoryPool(receivingMemoryOption.InitialMemorySize, receivingMemoryOption.MarginSize, logger);
+            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sendMessageQueueReader = _sendMessageQueue.Reader;
+            _sendMessageQueueWriter = _sendMessageQueue.Writer;
         }
 
         /// <summary>
@@ -136,7 +126,8 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public BinaryWebSocketClient(WebSocket connectedSocket, ILogger logger = null)
+        /// <param name="sendMessageQueue"></param>
+        public BinaryWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null)
         {
             Url = null;
 
@@ -144,6 +135,10 @@ namespace RxWebSocket
             _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
 
             _memoryPool = new MemoryPool(ReceivingMemoryOption.Default.InitialMemorySize, ReceivingMemoryOption.Default.MarginSize, logger);
+
+            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sendMessageQueueReader = _sendMessageQueue.Reader;
+            _sendMessageQueueWriter = _sendMessageQueue.Writer;
         }
 
         /// <summary>
@@ -152,7 +147,8 @@ namespace RxWebSocket
         /// <param name="receivingMemoryOption"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public BinaryWebSocketClient(WebSocket connectedSocket, ReceivingMemoryOption receivingMemoryOption, ILogger logger = null)
+        /// <param name="sendMessageQueue"></param>
+        public BinaryWebSocketClient(WebSocket connectedSocket, ReceivingMemoryOption receivingMemoryOption, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null)
         {
             Url = null;
 
@@ -160,6 +156,10 @@ namespace RxWebSocket
             _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
 
             _memoryPool = new MemoryPool(receivingMemoryOption.InitialMemorySize, receivingMemoryOption.MarginSize, logger);
+
+            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sendMessageQueueReader = _sendMessageQueue.Reader;
+            _sendMessageQueueWriter = _sendMessageQueue.Writer;
         }
 
         public WebSocket NativeSocket => _socket;
@@ -181,8 +181,6 @@ namespace RxWebSocket
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
         public IObservable<WebSocketExceptionDetail> ExceptionHappened => _exceptionSubject.AsObservable();
-
-        public int QueueCount => _sendMessageQueue.Count;
 
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
@@ -255,7 +253,8 @@ namespace RxWebSocket
 
                 _cancellationAllJobs.Dispose();
                 _cancellationCurrentJobs.Dispose();
-                _sendMessageQueue.Dispose();
+
+                _sendMessageQueueWriter.Complete();
 
                 _binaryMessageReceivedSubject.Dispose();
                 _textMessageReceivedSubject.Dispose();
