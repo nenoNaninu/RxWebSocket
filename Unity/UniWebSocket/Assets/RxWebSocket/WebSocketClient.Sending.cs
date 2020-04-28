@@ -9,11 +9,11 @@ namespace RxWebSocket
 {
     public partial class WebSocketClient
     {
-        public void Send(string message)
+        public bool Send(string message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
+                return _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
             }
             else
             {
@@ -26,11 +26,11 @@ namespace RxWebSocket
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
-        public void Send(byte[] message)
+        public bool Send(byte[] message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
+                return _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
             }
             else
             {
@@ -43,11 +43,11 @@ namespace RxWebSocket
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
-        public void Send(ArraySegment<byte> message)
+        public bool Send(ArraySegment<byte> message)
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                _sendMessageQueueWriter.TryWrite(new SendMessage(message, WebSocketMessageType.Binary));
+                return _sendMessageQueueWriter.TryWrite(new SendMessage(message, WebSocketMessageType.Binary));
             }
             else
             {
@@ -61,11 +61,11 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
-        public void Send(byte[] message, WebSocketMessageType messageType)
+        public bool Send(byte[] message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(message), messageType));
+                return _sendMessageQueueWriter.TryWrite(new SendMessage(new ArraySegment<byte>(message), messageType));
             }
             else
             {
@@ -79,11 +79,11 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
-        public void Send(ArraySegment<byte> message, WebSocketMessageType messageType)
+        public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                _sendMessageQueueWriter.TryWrite(new SendMessage(message, messageType));
+                return _sendMessageQueueWriter.TryWrite(new SendMessage(message, messageType));
             }
             else
             {
