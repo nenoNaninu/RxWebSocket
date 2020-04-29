@@ -53,7 +53,7 @@
         if (methods[0] == method)
         {
             return @"
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;";
         }
@@ -61,11 +61,11 @@
         if (methods[1] == method)
         {
             return @"
-            _binarySendMessageQueue = binarySendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _binarySendMessageQueue = binarySentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _binarySendMessageQueueReader = _binarySendMessageQueue.Reader;
             _binarySendMessageQueueWriter = _binarySendMessageQueue.Writer;
             
-            _textSendMessageQueue = textSendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _textSendMessageQueue = textSentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _textSendMessageQueueReader = _textSendMessageQueue.Reader;
             _textSendMessageQueueWriter = _textSendMessageQueue.Writer;";
         }
@@ -73,7 +73,7 @@
         if (methods[2] == method || methods[3] == method)
         {
             return @"
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;";
         }
@@ -86,17 +86,17 @@
     {
         if (methods[0] == method)
         {
-            return @"Channel<SentMessage> sendMessageQueue = null";
+            return @"Channel<SentMessage> sentMessageQueue = null";
         }
 
         if (methods[1] == method)
         {
-            return @"Channel<ArraySegment<byte>> binarySendMessageQueue = null, Channel<ArraySegment<byte>> textSendMessageQueue = null";
+            return @"Channel<ArraySegment<byte>> binarySentMessageQueue = null, Channel<ArraySegment<byte>> textSentMessageQueue = null";
         }
 
         if (methods[2] == method || methods[3] == method)
         {
-            return @"Channel<ArraySegment<byte>> sendMessageQueue = null";
+            return @"Channel<ArraySegment<byte>> sentMessageQueue = null";
         }
 
         return "";
@@ -106,17 +106,17 @@
     {
         if (methods[0] == method)
         {
-            return @"Channel<SentMessage> sendMessageQueue";
+            return @"Channel<SentMessage> sentMessageQueue";
         }
 
         if (methods[1] == method)
         {
-            return @"Channel<ArraySegment<byte>> binarySendMessageQueue, Channel<ArraySegment<byte>> textSendMessageQueue";
+            return @"Channel<ArraySegment<byte>> binarySentMessageQueue, Channel<ArraySegment<byte>> textSentMessageQueue";
         }
 
         if (methods[2] == method || methods[3] == method)
         {
-            return @"Channel<ArraySegment<byte>> sendMessageQueue";
+            return @"Channel<ArraySegment<byte>> sentMessageQueue";
         }
 
         return "";
@@ -126,10 +126,10 @@
     {
         if (methods[1] == method)
         {
-            return "binarySendMessageQueue, textSendMessageQueue";
+            return "binarySentMessageQueue, textSentMessageQueue";
         }
 
-        return @"sendMessageQueue";
+        return @"sentMessageQueue";
     };
 
 

@@ -69,16 +69,16 @@ namespace RxWebSocket
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public SingleQueueWebSocketClient(Uri url, Channel<SentMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, null, MakeConnectionFactory(clientFactory))
+        public SingleQueueWebSocketClient(Uri url, Channel<SentMessage> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, sentMessageQueue, null, MakeConnectionFactory(clientFactory))
         {
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public SingleQueueWebSocketClient(Uri url, ILogger logger, Channel<SentMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public SingleQueueWebSocketClient(Uri url, ILogger logger, Channel<SentMessage> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, sentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
@@ -86,15 +86,15 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public SingleQueueWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SentMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryConfig, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public SingleQueueWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SentMessage> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, receivingMemoryConfig, sentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
         public SingleQueueWebSocketClient(
             Uri url, 
             ReceivingMemoryConfig receivingMemoryConfig, 
-            Channel<SentMessage> sendMessageQueue, 
+            Channel<SentMessage> sentMessageQueue, 
             ILogger logger, 
             Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
@@ -119,7 +119,7 @@ namespace RxWebSocket
             });
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -128,7 +128,7 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public SingleQueueWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<SentMessage> sendMessageQueue = null)
+        public SingleQueueWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<SentMessage> sentMessageQueue = null)
         {
             Url = null;
 
@@ -138,7 +138,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(ReceivingMemoryConfig.Default.InitialMemorySize, ReceivingMemoryConfig.Default.MarginSize, logger);
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -148,7 +148,7 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public SingleQueueWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SentMessage> sendMessageQueue = null)
+        public SingleQueueWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SentMessage> sentMessageQueue = null)
         {
             Url = null;
 
@@ -158,7 +158,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -476,16 +476,16 @@ namespace RxWebSocket
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public DoubleQueueWebSocketClient(Uri url, Channel<ArraySegment<byte>> binarySendMessageQueue = null, Channel<ArraySegment<byte>> textSendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, binarySendMessageQueue, textSendMessageQueue, null, MakeConnectionFactory(clientFactory))
+        public DoubleQueueWebSocketClient(Uri url, Channel<ArraySegment<byte>> binarySentMessageQueue = null, Channel<ArraySegment<byte>> textSentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, binarySentMessageQueue, textSentMessageQueue, null, MakeConnectionFactory(clientFactory))
         {
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public DoubleQueueWebSocketClient(Uri url, ILogger logger, Channel<ArraySegment<byte>> binarySendMessageQueue = null, Channel<ArraySegment<byte>> textSendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, binarySendMessageQueue, textSendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public DoubleQueueWebSocketClient(Uri url, ILogger logger, Channel<ArraySegment<byte>> binarySentMessageQueue = null, Channel<ArraySegment<byte>> textSentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, binarySentMessageQueue, textSentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
@@ -493,15 +493,15 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public DoubleQueueWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> binarySendMessageQueue = null, Channel<ArraySegment<byte>> textSendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryConfig, binarySendMessageQueue, textSendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public DoubleQueueWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> binarySentMessageQueue = null, Channel<ArraySegment<byte>> textSentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, receivingMemoryConfig, binarySentMessageQueue, textSentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
         public DoubleQueueWebSocketClient(
             Uri url, 
             ReceivingMemoryConfig receivingMemoryConfig, 
-            Channel<ArraySegment<byte>> binarySendMessageQueue, Channel<ArraySegment<byte>> textSendMessageQueue, 
+            Channel<ArraySegment<byte>> binarySentMessageQueue, Channel<ArraySegment<byte>> textSentMessageQueue, 
             ILogger logger, 
             Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
@@ -526,11 +526,11 @@ namespace RxWebSocket
             });
 
             
-            _binarySendMessageQueue = binarySendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _binarySendMessageQueue = binarySentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _binarySendMessageQueueReader = _binarySendMessageQueue.Reader;
             _binarySendMessageQueueWriter = _binarySendMessageQueue.Writer;
             
-            _textSendMessageQueue = textSendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _textSendMessageQueue = textSentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _textSendMessageQueueReader = _textSendMessageQueue.Reader;
             _textSendMessageQueueWriter = _textSendMessageQueue.Writer;
         }
@@ -539,7 +539,7 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public DoubleQueueWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<ArraySegment<byte>> binarySendMessageQueue = null, Channel<ArraySegment<byte>> textSendMessageQueue = null)
+        public DoubleQueueWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<ArraySegment<byte>> binarySentMessageQueue = null, Channel<ArraySegment<byte>> textSentMessageQueue = null)
         {
             Url = null;
 
@@ -549,11 +549,11 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(ReceivingMemoryConfig.Default.InitialMemorySize, ReceivingMemoryConfig.Default.MarginSize, logger);
 
             
-            _binarySendMessageQueue = binarySendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _binarySendMessageQueue = binarySentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _binarySendMessageQueueReader = _binarySendMessageQueue.Reader;
             _binarySendMessageQueueWriter = _binarySendMessageQueue.Writer;
             
-            _textSendMessageQueue = textSendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _textSendMessageQueue = textSentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _textSendMessageQueueReader = _textSendMessageQueue.Reader;
             _textSendMessageQueueWriter = _textSendMessageQueue.Writer;
         }
@@ -563,7 +563,7 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public DoubleQueueWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> binarySendMessageQueue = null, Channel<ArraySegment<byte>> textSendMessageQueue = null)
+        public DoubleQueueWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> binarySentMessageQueue = null, Channel<ArraySegment<byte>> textSentMessageQueue = null)
         {
             Url = null;
 
@@ -573,11 +573,11 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             
-            _binarySendMessageQueue = binarySendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _binarySendMessageQueue = binarySentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _binarySendMessageQueueReader = _binarySendMessageQueue.Reader;
             _binarySendMessageQueueWriter = _binarySendMessageQueue.Writer;
             
-            _textSendMessageQueue = textSendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _textSendMessageQueue = textSentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
             _textSendMessageQueueReader = _textSendMessageQueue.Reader;
             _textSendMessageQueueWriter = _textSendMessageQueue.Writer;
         }
@@ -893,16 +893,16 @@ namespace RxWebSocket
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public BinaryWebSocketClient(Uri url, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, null, MakeConnectionFactory(clientFactory))
+        public BinaryWebSocketClient(Uri url, Channel<ArraySegment<byte>> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, sentMessageQueue, null, MakeConnectionFactory(clientFactory))
         {
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public BinaryWebSocketClient(Uri url, ILogger logger, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public BinaryWebSocketClient(Uri url, ILogger logger, Channel<ArraySegment<byte>> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, sentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
@@ -910,15 +910,15 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public BinaryWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryConfig, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public BinaryWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, receivingMemoryConfig, sentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
         public BinaryWebSocketClient(
             Uri url, 
             ReceivingMemoryConfig receivingMemoryConfig, 
-            Channel<ArraySegment<byte>> sendMessageQueue, 
+            Channel<ArraySegment<byte>> sentMessageQueue, 
             ILogger logger, 
             Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
@@ -943,7 +943,7 @@ namespace RxWebSocket
             });
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -952,7 +952,7 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public BinaryWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null)
+        public BinaryWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<ArraySegment<byte>> sentMessageQueue = null)
         {
             Url = null;
 
@@ -962,7 +962,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(ReceivingMemoryConfig.Default.InitialMemorySize, ReceivingMemoryConfig.Default.MarginSize, logger);
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -972,7 +972,7 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public BinaryWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null)
+        public BinaryWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sentMessageQueue = null)
         {
             Url = null;
 
@@ -982,7 +982,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -1296,16 +1296,16 @@ namespace RxWebSocket
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public TextWebSocketClient(Uri url, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, null, MakeConnectionFactory(clientFactory))
+        public TextWebSocketClient(Uri url, Channel<ArraySegment<byte>> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, sentMessageQueue, null, MakeConnectionFactory(clientFactory))
         {
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public TextWebSocketClient(Uri url, ILogger logger, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public TextWebSocketClient(Uri url, ILogger logger, Channel<ArraySegment<byte>> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, sentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
@@ -1313,15 +1313,15 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public TextWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryConfig, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public TextWebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sentMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
+            : this(url, receivingMemoryConfig, sentMessageQueue, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
         public TextWebSocketClient(
             Uri url, 
             ReceivingMemoryConfig receivingMemoryConfig, 
-            Channel<ArraySegment<byte>> sendMessageQueue, 
+            Channel<ArraySegment<byte>> sentMessageQueue, 
             ILogger logger, 
             Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
@@ -1346,7 +1346,7 @@ namespace RxWebSocket
             });
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -1355,7 +1355,7 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public TextWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null)
+        public TextWebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<ArraySegment<byte>> sentMessageQueue = null)
         {
             Url = null;
 
@@ -1365,7 +1365,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(ReceivingMemoryConfig.Default.InitialMemorySize, ReceivingMemoryConfig.Default.MarginSize, logger);
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
@@ -1375,7 +1375,7 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        public TextWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sendMessageQueue = null)
+        public TextWebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<ArraySegment<byte>> sentMessageQueue = null)
         {
             Url = null;
 
@@ -1385,7 +1385,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             
-            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
