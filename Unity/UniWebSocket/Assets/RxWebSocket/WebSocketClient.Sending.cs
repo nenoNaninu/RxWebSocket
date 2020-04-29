@@ -7,7 +7,7 @@ using RxWebSocket.Validations;
 
 namespace RxWebSocket
 {
-    public partial class WebSocketClient
+    public partial class WebSocketClient<T>
     {
         public bool Send(string message)
         {

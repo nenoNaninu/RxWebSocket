@@ -122,7 +122,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// For server(ASP.NET Core)
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
@@ -142,7 +141,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// For server(ASP.NET Core)
         /// </summary>
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>

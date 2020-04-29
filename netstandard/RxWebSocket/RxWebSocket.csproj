@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" />
+    <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" LinkBase="RxWebSocket"/>
     
     <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
   </ItemGroup>
