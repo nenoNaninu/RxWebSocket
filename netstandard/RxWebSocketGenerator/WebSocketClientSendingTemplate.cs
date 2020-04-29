@@ -30,6 +30,10 @@ public partial class SingleQueueWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -47,6 +51,10 @@ public partial class SingleQueueWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message)
         {
             if (ValidationUtils.ValidateInput(ref message))
@@ -65,6 +73,10 @@ public partial class SingleQueueWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -83,6 +95,10 @@ public partial class SingleQueueWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(ref message))
@@ -252,6 +268,10 @@ public partial class DoubleQueueWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -269,6 +289,10 @@ public partial class DoubleQueueWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message)
         {
             if (ValidationUtils.ValidateInput(ref message))
@@ -287,6 +311,10 @@ public partial class DoubleQueueWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -313,6 +341,10 @@ public partial class DoubleQueueWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(ref message))
@@ -570,6 +602,10 @@ public partial class BinaryWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -587,6 +623,10 @@ public partial class BinaryWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message)
         {
             if (ValidationUtils.ValidateInput(ref message))
@@ -605,6 +645,10 @@ public partial class BinaryWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -628,6 +672,10 @@ public partial class BinaryWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(ref message))
@@ -814,6 +862,10 @@ public partial class TextWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -831,6 +883,10 @@ public partial class TextWebSocketClient
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message)
         {
             if (ValidationUtils.ValidateInput(ref message))
@@ -849,6 +905,10 @@ public partial class TextWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(byte[] message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(message))
@@ -872,6 +932,10 @@ public partial class TextWebSocketClient
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
         /// <param name="messageType"></param>
+        /// <returns>
+        /// Always true in default.
+        /// If you are using a BoundedChannel it may return false.
+        /// </returns>
         public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(ref message))
