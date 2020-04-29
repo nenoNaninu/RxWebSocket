@@ -68,7 +68,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -90,7 +89,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -306,7 +304,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -320,14 +317,14 @@ namespace RxWebSocket
             if (ValidationUtils.ValidateInput(message))
             {
                 
-            if (messageType == WebSocketMessageType.Binary)
-            {
-                return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
-            }
-            else
-            {
-                return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
-            }
+                if (messageType == WebSocketMessageType.Binary)
+                {
+                    return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                }
+                else
+                {
+                    return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                }
             }
             else
             {
@@ -336,7 +333,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -640,7 +636,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -654,11 +649,11 @@ namespace RxWebSocket
             if (ValidationUtils.ValidateInput(message))
             {
                 
-            if (messageType != WebSocketMessageType.Binary)
-            {
-                throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
-            }
-            return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                if (messageType != WebSocketMessageType.Binary)
+                {
+                    throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
+                }
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -667,7 +662,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -870,7 +864,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                throw new NotImplementedException("TextWebSocketClient cannot send string.");
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -891,7 +885,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                throw new NotImplementedException("TextWebSocketClient cannot send string.");
+                return _sentMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -900,7 +894,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -914,11 +907,11 @@ namespace RxWebSocket
             if (ValidationUtils.ValidateInput(message))
             {
                 
-            if (messageType != WebSocketMessageType.Text)
-            {
-                throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
-            }
-            return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
+                }
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -927,7 +920,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>

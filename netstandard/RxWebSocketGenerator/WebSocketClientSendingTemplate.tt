@@ -33,7 +33,7 @@
 
         if (methods[3] == method)
         {
-            return String.Format("throw new NotImplementedException(\"{0}WebSocketClient cannot send string.\");", methods[3]);
+            return "return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));";
         }
 
         return "";
@@ -59,7 +59,7 @@
 
         if (methods[3] == method)
         {
-            return String.Format("throw new NotImplementedException(\"{0}WebSocketClient cannot send string.\");", methods[3]);
+            return "return _sentMessageQueueWriter.TryWrite(message);";
         }
 
         return "";
@@ -102,35 +102,35 @@
         if (methods[1] == method)
         {
             return @"
-            if (messageType == WebSocketMessageType.Binary)
-            {
-                return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
-            }
-            else
-            {
-                return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
-            }";
+                if (messageType == WebSocketMessageType.Binary)
+                {
+                    return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                }
+                else
+                {
+                    return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                }";
         }
 
         if (methods[2] == method)
         {
             return @"
-            if (messageType != WebSocketMessageType.Binary)
-            {
-                throw new WebSocketBadInputException($""In BinaryWebSocketClient, the message type must be binary."");
-            }
-            return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));";
+                if (messageType != WebSocketMessageType.Binary)
+                {
+                    throw new WebSocketBadInputException($""In BinaryWebSocketClient, the message type must be binary."");
+                }
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));";
         }
 
         if (methods[3] == method)
         {
             return @"
-            if (messageType != WebSocketMessageType.Text)
-            {
-                throw new WebSocketBadInputException($""In TextWebSocketClient, the message type must be text."");
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($""In TextWebSocketClient, the message type must be text."");
+                }
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));";
             }
-            return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));";
-        }
 
         return "";
     };
@@ -702,7 +702,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
@@ -724,7 +723,6 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
