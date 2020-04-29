@@ -11,7 +11,7 @@ using RxWebSocket.Validations;
 namespace RxWebSocket
 {
 
-public partial class SingleQueueWebSocketClient
+    public partial class SingleQueueWebSocketClient
     {
         public bool Send(string message)
         {
@@ -229,27 +229,27 @@ public partial class SingleQueueWebSocketClient
         }
 
         
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private async Task SendInternalSynchronized(SentMessage message)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async Task SendInternalSynchronized(SentMessage message)
+        {
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                using (await _sendLocker.LockAsync().ConfigureAwait(false))
+                if (!IsOpen)
                 {
-                    if (!IsOpen)
-                    {
-                        _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
-                        return;
-                    }
-
-                    _logger?.Log(FormatLogMessage($"Sending:  {message}"));
-
-                    await _socket
-                        .SendAsync(message.Bytes, message.MessageType, true, _cancellationCurrentJobs.Token)
-                        .ConfigureAwait(false);
+                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
+                    return;
                 }
+
+                _logger?.Log(FormatLogMessage($"Sending:  {message}"));
+
+                await _socket
+                    .SendAsync(message.Bytes, message.MessageType, true, _cancellationCurrentJobs.Token)
+                    .ConfigureAwait(false);
             }
+        }
     }
 
-public partial class DoubleQueueWebSocketClient
+    public partial class DoubleQueueWebSocketClient
     {
         public bool Send(string message)
         {
@@ -350,14 +350,14 @@ public partial class DoubleQueueWebSocketClient
             if (ValidationUtils.ValidateInput(ref message))
             {
                 
-            if (messageType == WebSocketMessageType.Binary)
-            {
-                return _sentBinaryMessageQueueWriter.TryWrite(message);
-            }
-            else
-            {
-                return _sentTextMessageQueueWriter.TryWrite(message);
-            }
+                if (messageType == WebSocketMessageType.Binary)
+                {
+                    return _sentBinaryMessageQueueWriter.TryWrite(message);
+                }
+                else
+                {
+                    return _sentTextMessageQueueWriter.TryWrite(message);
+                }
             }
             else
             {
@@ -400,14 +400,14 @@ public partial class DoubleQueueWebSocketClient
             if (ValidationUtils.ValidateInput(message))
             {
                 
-            if (messageType == WebSocketMessageType.Binary)
-            {
-                return SendBinaryInternalSynchronized(new ArraySegment<byte>(message));
-            }
-            else
-            {
-                return SendTextInternalSynchronized(new ArraySegment<byte>(message));
-            }
+                if (messageType == WebSocketMessageType.Binary)
+                {
+                    return SendBinaryInternalSynchronized(new ArraySegment<byte>(message));
+                }
+                else
+                {
+                    return SendTextInternalSynchronized(new ArraySegment<byte>(message));
+                }
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -433,14 +433,14 @@ public partial class DoubleQueueWebSocketClient
             if (ValidationUtils.ValidateInput(ref message))
             {
                 
-            if (messageType == WebSocketMessageType.Binary)
-            {
-                return SendBinaryInternalSynchronized(message);
-            }
-            else
-            {
-                return SendTextInternalSynchronized(message);
-            }
+                if (messageType == WebSocketMessageType.Binary)
+                {
+                    return SendBinaryInternalSynchronized(message);
+                }
+                else
+                {
+                    return SendTextInternalSynchronized(message);
+                }
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -543,47 +543,47 @@ public partial class DoubleQueueWebSocketClient
         }
 
         
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private async Task SendBinaryInternalSynchronized(ArraySegment<byte> message)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async Task SendBinaryInternalSynchronized(ArraySegment<byte> message)
+        {
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                using (await _sendLocker.LockAsync().ConfigureAwait(false))
+                if (!IsOpen)
                 {
-                    if (!IsOpen)
-                    {
-                        _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
-                        return;
-                    }
-
-                    _logger?.Log(FormatLogMessage($"Sending:  {message}"));
-
-                    await _socket
-                        .SendAsync(message, WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
-                        .ConfigureAwait(false);
+                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
+                    return;
                 }
+
+                _logger?.Log(FormatLogMessage($"Sending:  {message}"));
+
+                await _socket
+                    .SendAsync(message, WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
+                    .ConfigureAwait(false);
             }
+        }
         
                 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private async Task SendTextInternalSynchronized(ArraySegment<byte> message)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async Task SendTextInternalSynchronized(ArraySegment<byte> message)
+        {
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                using (await _sendLocker.LockAsync().ConfigureAwait(false))
+                if (!IsOpen)
                 {
-                    if (!IsOpen)
-                    {
-                        _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
-                        return;
-                    }
-
-                    _logger?.Log(FormatLogMessage($"Sending:  {message}"));
-
-                    await _socket
-                        .SendAsync(message, WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
-                        .ConfigureAwait(false);
+                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
+                    return;
                 }
+
+                _logger?.Log(FormatLogMessage($"Sending:  {message}"));
+
+                await _socket
+                    .SendAsync(message, WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
+                    .ConfigureAwait(false);
             }
+        }
     }
 
-public partial class BinaryWebSocketClient
+    public partial class BinaryWebSocketClient
     {
         public bool Send(string message)
         {
@@ -681,11 +681,11 @@ public partial class BinaryWebSocketClient
             if (ValidationUtils.ValidateInput(ref message))
             {
                 
-            if (messageType != WebSocketMessageType.Binary)
-            {
-                throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
-            }
-            return _sentMessageQueueWriter.TryWrite(message);
+                if (messageType != WebSocketMessageType.Binary)
+                {
+                    throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
+                }
+                return _sentMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -728,12 +728,12 @@ public partial class BinaryWebSocketClient
             if (ValidationUtils.ValidateInput(message))
             {
                 
-            if (messageType != WebSocketMessageType.Binary)
-            {
-                throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
-            }
+                if (messageType != WebSocketMessageType.Binary)
+                {
+                    throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
+                }
 
-            return SendInternalSynchronized(new ArraySegment<byte>(message));
+                return SendInternalSynchronized(new ArraySegment<byte>(message));
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -759,12 +759,12 @@ public partial class BinaryWebSocketClient
             if (ValidationUtils.ValidateInput(ref message))
             {
                 
-            if (messageType != WebSocketMessageType.Binary)
-            {
-                throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
-            }
+                if (messageType != WebSocketMessageType.Binary)
+                {
+                    throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
+                }
 
-            return SendInternalSynchronized(message);
+                return SendInternalSynchronized(message);
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -823,27 +823,27 @@ public partial class BinaryWebSocketClient
         }
 
         
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private async Task SendInternalSynchronized(ArraySegment<byte> message)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async Task SendInternalSynchronized(ArraySegment<byte> message)
+        {
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                using (await _sendLocker.LockAsync().ConfigureAwait(false))
+                if (!IsOpen)
                 {
-                    if (!IsOpen)
-                    {
-                        _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
-                        return;
-                    }
-
-                    _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Count}"));
-
-                    await _socket
-                        .SendAsync(message, WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
-                        .ConfigureAwait(false);
+                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
+                    return;
                 }
+
+                _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Count}"));
+
+                await _socket
+                    .SendAsync(message, WebSocketMessageType.Binary, true, _cancellationCurrentJobs.Token)
+                    .ConfigureAwait(false);
             }
+        }
     }
 
-public partial class TextWebSocketClient
+    public partial class TextWebSocketClient
     {
         public bool Send(string message)
         {
@@ -941,11 +941,11 @@ public partial class TextWebSocketClient
             if (ValidationUtils.ValidateInput(ref message))
             {
                 
-            if (messageType != WebSocketMessageType.Text)
-            {
-                throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
-            }
-            return _sentMessageQueueWriter.TryWrite(message);
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
+                }
+                return _sentMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -988,11 +988,11 @@ public partial class TextWebSocketClient
             if (ValidationUtils.ValidateInput(message))
             {
                 
-            if (messageType != WebSocketMessageType.Text)
-            {
-                throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
-            }
-            return SendInternalSynchronized(new ArraySegment<byte>(message));
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
+                }
+                return SendInternalSynchronized(new ArraySegment<byte>(message));
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -1018,11 +1018,11 @@ public partial class TextWebSocketClient
             if (ValidationUtils.ValidateInput(ref message))
             {
                 
-            if (messageType != WebSocketMessageType.Text)
-            {
-                throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
-            }
-            return SendInternalSynchronized(message);
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextWebSocketClient, the message type must be text.");
+                }
+                return SendInternalSynchronized(message);
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -1081,23 +1081,23 @@ public partial class TextWebSocketClient
         }
 
         
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private async Task SendInternalSynchronized(ArraySegment<byte> message)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async Task SendInternalSynchronized(ArraySegment<byte> message)
+        {
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                using (await _sendLocker.LockAsync().ConfigureAwait(false))
+                if (!IsOpen)
                 {
-                    if (!IsOpen)
-                    {
-                        _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
-                        return;
-                    }
-
-                    _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Count}"));
-
-                    await _socket
-                        .SendAsync(message, WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
-                        .ConfigureAwait(false);
+                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send binary, length: {message.Count}"));
+                    return;
                 }
+
+                _logger?.Log(FormatLogMessage($"Sending binary, length: {message.Count}"));
+
+                await _socket
+                    .SendAsync(message, WebSocketMessageType.Text, true, _cancellationCurrentJobs.Token)
+                    .ConfigureAwait(false);
             }
+        }
     }
 }
