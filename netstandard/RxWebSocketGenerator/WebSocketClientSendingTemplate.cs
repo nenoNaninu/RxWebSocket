@@ -255,7 +255,7 @@ public partial class DoubleQueueWebSocketClient
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _textSendMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
+                return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
             }
             else
             {
@@ -276,7 +276,7 @@ public partial class DoubleQueueWebSocketClient
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _binarySendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -297,7 +297,7 @@ public partial class DoubleQueueWebSocketClient
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return _binarySendMessageQueueWriter.TryWrite(message);
+                return _sentBinaryMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -322,11 +322,11 @@ public partial class DoubleQueueWebSocketClient
                 
             if (messageType == WebSocketMessageType.Binary)
             {
-                return _binarySendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
-                return _textSendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             }
             else
@@ -352,11 +352,11 @@ public partial class DoubleQueueWebSocketClient
                 
             if (messageType == WebSocketMessageType.Binary)
             {
-                return _binarySendMessageQueueWriter.TryWrite(message);
+                return _sentBinaryMessageQueueWriter.TryWrite(message);
             }
             else
             {
-                return _textSendMessageQueueWriter.TryWrite(message);
+                return _sentTextMessageQueueWriter.TryWrite(message);
             }
             }
             else
@@ -451,9 +451,9 @@ public partial class DoubleQueueWebSocketClient
         {
             try
             {
-                while (await _binarySendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
+                while (await _sentBinaryMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    while (_binarySendMessageQueueReader.TryRead(out var message))
+                    while (_sentBinaryMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -493,9 +493,9 @@ public partial class DoubleQueueWebSocketClient
         {
             try
             {
-                while (await _textSendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
+                while (await _sentTextMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    while (_textSendMessageQueueReader.TryRead(out var message))
+                    while (_sentTextMessageQueueReader.TryRead(out var message))
                     {
 
                         try

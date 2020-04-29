@@ -23,7 +23,7 @@
 
         if (methods[1] == method)
         {
-            return "return _binarySendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));";
+            return "return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));";
         }
 
         if (methods[2] == method)
@@ -49,7 +49,7 @@
 
         if (methods[1] == method)
         {
-            return "return _binarySendMessageQueueWriter.TryWrite(message);";
+            return "return _sentBinaryMessageQueueWriter.TryWrite(message);";
         }
 
         if (methods[2] == method)
@@ -75,7 +75,7 @@
 
         if (methods[1] == method)
         {
-            return "return _textSendMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));";
+            return "return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));";
         }
 
         if (methods[2] == method)
@@ -104,11 +104,11 @@
             return @"
             if (messageType == WebSocketMessageType.Binary)
             {
-                return _binarySendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                return _sentBinaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
-                return _textSendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                return _sentTextMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }";
         }
 
@@ -148,11 +148,11 @@
             return @"
             if (messageType == WebSocketMessageType.Binary)
             {
-                return _binarySendMessageQueueWriter.TryWrite(message);
+                return _sentBinaryMessageQueueWriter.TryWrite(message);
             }
             else
             {
-                return _textSendMessageQueueWriter.TryWrite(message);
+                return _sentTextMessageQueueWriter.TryWrite(message);
             }";
         }
 
@@ -477,9 +477,9 @@
         {
             try
             {
-                while (await _binarySendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
+                while (await _sentBinaryMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    while (_binarySendMessageQueueReader.TryRead(out var message))
+                    while (_sentBinaryMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -519,9 +519,9 @@
         {
             try
             {
-                while (await _textSendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
+                while (await _sentTextMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    while (_textSendMessageQueueReader.TryRead(out var message))
+                    while (_sentTextMessageQueueReader.TryRead(out var message))
                     {
 
                         try

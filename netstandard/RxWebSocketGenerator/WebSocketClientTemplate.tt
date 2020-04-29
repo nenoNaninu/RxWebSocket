@@ -27,13 +27,13 @@
         if (methods[1] == method)
         {
             return @"
-        private readonly Channel<ArraySegment<byte>> _binarySendMessageQueue;
-        private readonly ChannelReader<ArraySegment<byte>> _binarySendMessageQueueReader;
-        private readonly ChannelWriter<ArraySegment<byte>> _binarySendMessageQueueWriter;
+        private readonly Channel<ArraySegment<byte>> _sentBinaryMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _sentBinaryMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _sentBinaryMessageQueueWriter;
             
-        private readonly Channel<ArraySegment<byte>> _textSendMessageQueue;
-        private readonly ChannelReader<ArraySegment<byte>> _textSendMessageQueueReader;
-        private readonly ChannelWriter<ArraySegment<byte>> _textSendMessageQueueWriter;";
+        private readonly Channel<ArraySegment<byte>> _sentTextMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _sentTextMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _sentTextMessageQueueWriter;";
         }
 
         if (methods[2] == method || methods[3] == method)
@@ -61,13 +61,13 @@
         if (methods[1] == method)
         {
             return @"
-            _binarySendMessageQueue = binarySentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
-            _binarySendMessageQueueReader = _binarySendMessageQueue.Reader;
-            _binarySendMessageQueueWriter = _binarySendMessageQueue.Writer;
+            _sentBinaryMessageQueue = sentBinaryMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _sentBinaryMessageQueueReader = _sentBinaryMessageQueue.Reader;
+            _sentBinaryMessageQueueWriter = _sentBinaryMessageQueue.Writer;
             
-            _textSendMessageQueue = textSentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
-            _textSendMessageQueueReader = _textSendMessageQueue.Reader;
-            _textSendMessageQueueWriter = _textSendMessageQueue.Writer;";
+            _sentTextMessageQueue = sentTextMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _sentTextMessageQueueReader = _sentTextMessageQueue.Reader;
+            _sentTextMessageQueueWriter = _sentTextMessageQueue.Writer;";
         }
 
         if (methods[2] == method || methods[3] == method)
@@ -91,7 +91,7 @@
 
         if (methods[1] == method)
         {
-            return @"Channel<ArraySegment<byte>> binarySentMessageQueue = null, Channel<ArraySegment<byte>> textSentMessageQueue = null";
+            return @"Channel<ArraySegment<byte>> sentBinaryMessageQueue = null, Channel<ArraySegment<byte>> sentTextMessageQueue = null";
         }
 
         if (methods[2] == method || methods[3] == method)
@@ -111,7 +111,7 @@
 
         if (methods[1] == method)
         {
-            return @"Channel<ArraySegment<byte>> binarySentMessageQueue, Channel<ArraySegment<byte>> textSentMessageQueue";
+            return @"Channel<ArraySegment<byte>> sentBinaryMessageQueue, Channel<ArraySegment<byte>> sentTextMessageQueue";
         }
 
         if (methods[2] == method || methods[3] == method)
@@ -126,7 +126,7 @@
     {
         if (methods[1] == method)
         {
-            return "binarySentMessageQueue, textSentMessageQueue";
+            return "sentBinaryMessageQueue, sentTextMessageQueue";
         }
 
         return @"sentMessageQueue";
@@ -138,8 +138,8 @@
         if (methods[1] == method)
         {
             return @"
-                _binarySendMessageQueueWriter.Complete();
-                _textSendMessageQueueWriter.Complete();";
+                _sentBinaryMessageQueueWriter.Complete();
+                _sentTextMessageQueueWriter.Complete();";
         }
 
         return "_sentMessageQueueWriter.Complete();";
