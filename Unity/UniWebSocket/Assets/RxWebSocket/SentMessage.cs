@@ -4,12 +4,12 @@ using RxWebSocket.Exceptions;
 
 namespace RxWebSocket
 {
-    public class SendMessage
+    public class SentMessage
     {
         public WebSocketMessageType MessageType { get; }
         public ArraySegment<byte> Bytes { get; }
 
-        public SendMessage(ArraySegment<byte> bytes, WebSocketMessageType messageType)
+        public SentMessage(ArraySegment<byte> bytes, WebSocketMessageType messageType)
         {
             if (messageType == WebSocketMessageType.Close)
             {
@@ -18,7 +18,7 @@ namespace RxWebSocket
             Bytes = bytes;
             MessageType = messageType;
         }
-        
+
         public override string ToString()
         {
             if (MessageType == WebSocketMessageType.Binary)

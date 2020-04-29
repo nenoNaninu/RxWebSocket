@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" LinkBase="RxWebSocket"/>
+    <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" LinkBase="RxWebSocket" />
     
     <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
   </ItemGroup>

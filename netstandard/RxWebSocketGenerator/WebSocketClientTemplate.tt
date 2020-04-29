@@ -1,3 +1,157 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<#
+
+    var methods = new[]
+    {
+        "SingleQueue", 
+        "DoubleQueue", 
+        "Binary",  
+        "Text",
+    };
+
+    Func<string, string> GetChannelFields = method =>
+    {
+        if (methods[0] == method)
+        {
+            return @"
+        private readonly Channel<SentMessage> _sentMessageQueue;
+        private readonly ChannelReader<SentMessage> _sentMessageQueueReader;
+        private readonly ChannelWriter<SentMessage> _sentMessageQueueWriter;";
+        }
+
+        if (methods[1] == method)
+        {
+            return @"
+        private readonly Channel<ArraySegment<byte>> _binarySendMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _binarySendMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _binarySendMessageQueueWriter;
+            
+        private readonly Channel<ArraySegment<byte>> _textSendMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _textSendMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _textSendMessageQueueWriter;";
+        }
+
+        if (methods[2] == method || methods[3] == method)
+        {
+            return @"
+        private readonly Channel<ArraySegment<byte>> _sentMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _sentMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _sentMessageQueueWriter;";
+        }
+
+        return "";
+    };
+
+
+    Func<string, string> InitializeChannel = method =>
+    {
+        if (methods[0] == method)
+        {
+            return @"
+            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueueReader = _sentMessageQueue.Reader;
+            _sentMessageQueueWriter = _sentMessageQueue.Writer;";
+        }
+
+        if (methods[1] == method)
+        {
+            return @"
+            _binarySendMessageQueue = binarySendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _binarySendMessageQueueReader = _binarySendMessageQueue.Reader;
+            _binarySendMessageQueueWriter = _binarySendMessageQueue.Writer;
+            
+            _textSendMessageQueue = textSendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });;
+            _textSendMessageQueueReader = _textSendMessageQueue.Reader;
+            _textSendMessageQueueWriter = _textSendMessageQueue.Writer;";
+        }
+
+        if (methods[2] == method || methods[3] == method)
+        {
+            return @"
+            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueueReader = _sentMessageQueue.Reader;
+            _sentMessageQueueWriter = _sentMessageQueue.Writer;";
+        }
+
+        return "";
+    };
+
+
+    Func<string, string> SetChannelConstructorWithDefault = method =>
+    {
+        if (methods[0] == method)
+        {
+            return @"Channel<SentMessage> sendMessageQueue = null";
+        }
+
+        if (methods[1] == method)
+        {
+            return @"Channel<ArraySegment<byte>> binarySendMessageQueue = null, Channel<ArraySegment<byte>> textSendMessageQueue = null";
+        }
+
+        if (methods[2] == method || methods[3] == method)
+        {
+            return @"Channel<ArraySegment<byte>> sendMessageQueue = null";
+        }
+
+        return "";
+    };
+
+    Func<string, string> SetChannelConstructor = method =>
+    {
+        if (methods[0] == method)
+        {
+            return @"Channel<SentMessage> sendMessageQueue";
+        }
+
+        if (methods[1] == method)
+        {
+            return @"Channel<ArraySegment<byte>> binarySendMessageQueue, Channel<ArraySegment<byte>> textSendMessageQueue";
+        }
+
+        if (methods[2] == method || methods[3] == method)
+        {
+            return @"Channel<ArraySegment<byte>> sendMessageQueue";
+        }
+
+        return "";
+    };
+
+    Func<string, string> SetFallbackConstructor = method =>
+    {
+        if (methods[1] == method)
+        {
+            return "binarySendMessageQueue, textSendMessageQueue";
+        }
+
+        return @"sendMessageQueue";
+    };
+
+
+    Func<string, string> SetWriterComplete = method =>
+    {
+        if (methods[1] == method)
+        {
+            return @"
+                _binarySendMessageQueueWriter.Complete();
+                _textSendMessageQueueWriter.Complete();";
+        }
+
+        return "_sentMessageQueueWriter.Complete();";
+    };
+
+
+
+
+#>
+// <auto-generated>
+// THIS (.cs) FILE IS GENERATED BY T4. DO NOT CHANGE IT. CHANGE THE .tt FILE INSTEAD.
+// </auto-generated>
 using System;
 using System.Net.WebSockets;
 using System.Text;
@@ -9,16 +163,18 @@ using RxWebSocket.Threading;
 using RxWebSocket.Validations;
 using RxWebSocket.Logging;
 
-#if NETSTANDARD2_1 || NETSTANDARD2_0
+#if NETSTANDARD2_1 || NETSTANDARD2_0 || NETCOREAPP3_1
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
 #else
 using UniRx;
 #endif
-
+ 
 namespace RxWebSocket
 {
-    public partial class WebSocketClient : IWebSocketClient
+<# foreach(var method in methods) { #>
+
+   public partial class <#= method #>WebSocketClient : IWebSocketClient
     {
         #region Member variable with state.
         private readonly ILogger _logger;
@@ -40,9 +196,7 @@ namespace RxWebSocket
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
 
-        private readonly Channel<SentMessage> _sendMessageQueue;
-        private readonly ChannelReader<SentMessage> _sendMessageQueueReader;
-        private readonly ChannelWriter<SentMessage> _sendMessageQueueWriter;
+        <#= GetChannelFields(method)#>
 
         private WebSocket _socket;
 
@@ -64,35 +218,32 @@ namespace RxWebSocket
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        /// <param name="sendMessageQueue"></param>
-        public WebSocketClient(Uri url, Channel<SentMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, null, MakeConnectionFactory(clientFactory))
+        public <#= method #>WebSocketClient(Uri url, <#= SetChannelConstructorWithDefault(method)#>, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, <#= SetFallbackConstructor(method) #>, null, MakeConnectionFactory(clientFactory))
         {
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="logger"></param>
-        /// <param name="sendMessageQueue"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, ILogger logger, Channel<SentMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public <#= method #>WebSocketClient(Uri url, ILogger logger, <#= SetChannelConstructorWithDefault(method)#>, Func<ClientWebSocket> clientFactory = null)
+            : this(url, ReceivingMemoryConfig.Default, <#= SetFallbackConstructor(method) #>, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
         /// <param name="url">Target websocket url (wss://)</param>
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
-        /// <param name="sendMessageQueue"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SentMessage> sendMessageQueue = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryConfig, sendMessageQueue, logger, MakeConnectionFactory(clientFactory))
+        public <#= method #>WebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, <#= SetChannelConstructorWithDefault(method)#>, Func<ClientWebSocket> clientFactory = null)
+            : this(url, receivingMemoryConfig, <#= SetFallbackConstructor(method) #>, logger, MakeConnectionFactory(clientFactory))
         {
         }
 
-        public WebSocketClient(
+        public <#= method #>WebSocketClient(
             Uri url, 
             ReceivingMemoryConfig receivingMemoryConfig, 
-            Channel<SentMessage> sendMessageQueue, 
+            <#= SetChannelConstructor(method)#>, 
             ILogger logger, 
             Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
         {
@@ -116,17 +267,14 @@ namespace RxWebSocket
                 return client;
             });
 
-            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _sendMessageQueueReader = _sendMessageQueue.Reader;
-            _sendMessageQueueWriter = _sendMessageQueue.Writer;
+            <#= InitializeChannel(method) #>
         }
 
         /// <summary>
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        /// <param name="sendMessageQueue"></param>
-        public WebSocketClient(WebSocket connectedSocket, ILogger logger = null, Channel<SentMessage> sendMessageQueue = null)
+        public <#= method #>WebSocketClient(WebSocket connectedSocket, ILogger logger = null, <#= SetChannelConstructorWithDefault(method)#>)
         {
             Url = null;
 
@@ -135,9 +283,7 @@ namespace RxWebSocket
 
             _memoryPool = new MemoryPool(ReceivingMemoryConfig.Default.InitialMemorySize, ReceivingMemoryConfig.Default.MarginSize, logger);
 
-            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _sendMessageQueueReader = _sendMessageQueue.Reader;
-            _sendMessageQueueWriter = _sendMessageQueue.Writer;
+            <#= InitializeChannel(method) #>
         }
 
         /// <summary>
@@ -145,8 +291,7 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
-        /// <param name="sendMessageQueue"></param>
-        public WebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, Channel<SentMessage> sendMessageQueue = null)
+        public <#= method #>WebSocketClient(WebSocket connectedSocket, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, <#= SetChannelConstructorWithDefault(method)#>)
         {
             Url = null;
 
@@ -155,9 +300,7 @@ namespace RxWebSocket
 
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
-            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _sendMessageQueueReader = _sendMessageQueue.Reader;
-            _sendMessageQueueWriter = _sendMessageQueue.Writer;
+            <#= InitializeChannel(method) #>
         }
 
         public WebSocket NativeSocket => _socket;
@@ -251,7 +394,7 @@ namespace RxWebSocket
                 _cancellationAllJobs.Dispose();
                 _cancellationCurrentJobs.Dispose();
 
-                _sendMessageQueueWriter.Complete();
+                <#= SetWriterComplete(method) #>
 
                 _binaryMessageReceivedSubject.Dispose();
                 _textMessageReceivedSubject.Dispose();
@@ -428,4 +571,5 @@ namespace RxWebSocket
             return $"[WEBSOCKET {Name}] {msg}";
         }
     }
+<# } #>
 }
