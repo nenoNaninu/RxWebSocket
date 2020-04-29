@@ -269,15 +269,11 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Close WebSocket
+        /// Close WebSocket.
+        /// This function is equivalent to CloseAsync(status, statusDescription, true)
         /// </summary>
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
-        /// <returns>
-        /// true is normal.
-        /// If false, there is a problem.
-        /// This function is equivalent to CloseAsync(status, statusDescription, true)
-        /// </returns>
         public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
@@ -289,9 +285,6 @@ namespace RxWebSocket
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
         /// <param name="dispose"></param>
-        /// <returns>true is normal.
-        /// If false, there is a problem.
-        /// </returns>
         public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
             // prevent sending multiple disconnect requests.
@@ -697,15 +690,11 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Close WebSocket
+        /// Close WebSocket.
+        /// This function is equivalent to CloseAsync(status, statusDescription, true)
         /// </summary>
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
-        /// <returns>
-        /// true is normal.
-        /// If false, there is a problem.
-        /// This function is equivalent to CloseAsync(status, statusDescription, true)
-        /// </returns>
         public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
@@ -717,9 +706,6 @@ namespace RxWebSocket
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
         /// <param name="dispose"></param>
-        /// <returns>true is normal.
-        /// If false, there is a problem.
-        /// </returns>
         public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
             // prevent sending multiple disconnect requests.
@@ -1107,15 +1093,11 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Close WebSocket
+        /// Close WebSocket.
+        /// This function is equivalent to CloseAsync(status, statusDescription, true)
         /// </summary>
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
-        /// <returns>
-        /// true is normal.
-        /// If false, there is a problem.
-        /// This function is equivalent to CloseAsync(status, statusDescription, true)
-        /// </returns>
         public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
@@ -1127,9 +1109,6 @@ namespace RxWebSocket
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
         /// <param name="dispose"></param>
-        /// <returns>true is normal.
-        /// If false, there is a problem.
-        /// </returns>
         public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
             // prevent sending multiple disconnect requests.
@@ -1517,15 +1496,11 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Close WebSocket
+        /// Close WebSocket.
+        /// This function is equivalent to CloseAsync(status, statusDescription, true)
         /// </summary>
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
-        /// <returns>
-        /// true is normal.
-        /// If false, there is a problem.
-        /// This function is equivalent to CloseAsync(status, statusDescription, true)
-        /// </returns>
         public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
@@ -1537,9 +1512,6 @@ namespace RxWebSocket
         /// <param name="status"></param>
         /// <param name="statusDescription"></param>
         /// <param name="dispose"></param>
-        /// <returns>true is normal.
-        /// If false, there is a problem.
-        /// </returns>
         public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
             // prevent sending multiple disconnect requests.
