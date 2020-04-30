@@ -32,7 +32,7 @@ namespace RxWebSocket
         private readonly AsyncLock _closeLocker = new AsyncLock();
 
         private readonly Subject<byte[]> _binaryMessageReceivedSubject = new Subject<byte[]>();
-        private readonly Subject<string> _textMessageReceivedSubject = new Subject<string>();
+        private readonly Subject<byte[]> _textMessageReceivedSubject = new Subject<byte[]>();
 
         private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
@@ -173,7 +173,9 @@ namespace RxWebSocket
 
         public IObservable<byte[]> BinaryMessageReceived => _binaryMessageReceivedSubject.AsObservable();
 
-        public IObservable<string> TextMessageReceived => _textMessageReceivedSubject.AsObservable();
+        public IObservable<byte[]> TextMessageReceived => _textMessageReceivedSubject.AsObservable();
+
+        public IObservable<string> TextMessageReceivedAutoDecode => TextMessageReceived.Select(x => MessageEncoding.GetString(x));
 
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
@@ -366,7 +368,7 @@ namespace RxWebSocket
 
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
-                        var receivedText = MessageEncoding.GetString(_memoryPool.ToArray());
+                        var receivedText =_memoryPool.ToArray();
                         _logger?.Log(FormatLogMessage($"Received: Type Text: {receivedText}"));
                         _textMessageReceivedSubject.OnNext(receivedText);
                     }

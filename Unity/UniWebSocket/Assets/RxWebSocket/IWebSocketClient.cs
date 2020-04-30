@@ -16,7 +16,9 @@ namespace RxWebSocket
 
         IObservable<byte[]> BinaryMessageReceived { get; }
 
-        IObservable<string> TextMessageReceived { get; }
+        IObservable<byte[]> TextMessageReceived { get; }
+
+        IObservable<string> TextMessageReceivedAutoDecode { get; }
 
         /// <summary>
         /// Triggered after the connection was lost.

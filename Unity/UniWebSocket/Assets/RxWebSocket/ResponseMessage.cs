@@ -7,17 +7,11 @@ namespace RxWebSocket
     /// </summary>
     public class ResponseMessage
     {
-        private ResponseMessage(byte[] binary, string text, WebSocketMessageType messageType)
+        private ResponseMessage(byte[] binary, WebSocketMessageType messageType)
         {
             Binary = binary;
-            Text = text;
             MessageType = messageType;
         }
-
-        /// <summary>
-        /// Received text message (only if type = WebSocketMessageType.Text)
-        /// </summary>
-        public string Text { get; }
 
         /// <summary>
         /// Received text message (only if type = WebSocketMessageType.Binary)
@@ -36,7 +30,7 @@ namespace RxWebSocket
         {
             if (MessageType == WebSocketMessageType.Text)
             {
-                return Text;
+                return $"Type binary, length: {Binary?.Length}";
             }
 
             return $"Type binary, length: {Binary?.Length}";
@@ -45,9 +39,9 @@ namespace RxWebSocket
         /// <summary>
         /// Create text response message
         /// </summary>
-        public static ResponseMessage TextMessage(string data)
+        public static ResponseMessage TextMessage(byte[] data)
         {
-            return new ResponseMessage(null, data, WebSocketMessageType.Text);
+            return new ResponseMessage(data, WebSocketMessageType.Text);
         }
 
         /// <summary>
@@ -55,7 +49,7 @@ namespace RxWebSocket
         /// </summary>
         public static ResponseMessage BinaryMessage(byte[] data)
         {
-            return new ResponseMessage(data, null, WebSocketMessageType.Binary);
+            return new ResponseMessage(data, WebSocketMessageType.Binary);
         }
     }
 }
