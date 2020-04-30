@@ -1,11 +1,31 @@
 ﻿using System;
 using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using RxWebSocket.Logging;
 
 namespace RxWebSocket
 {
-    public interface IWebSocketMessageSender
+    internal interface IWebSocketMessageSenderCore : IDisposable
     {
+        /// <summary>
+        /// Sets used encoding for sending and receiving text messages.
+        /// Default is UTF8
+        /// </summary>
+        Encoding MessageEncoding { get; }
+
+        Task SendMessageFromQueue();
+
+        void SetInternal(
+            CancellationToken sendingCancellationToken,
+            CancellationToken waitQueueCancellationToken,
+            ILogger logger);
+
+        IObservable<WebSocketExceptionDetail> ExceptionHappenedInSending { get; }
+
+        void SetSocket(WebSocket webSocket);
+
         /// <summary>
         /// Send message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.

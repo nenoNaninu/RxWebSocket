@@ -1,59 +1,19 @@
-﻿using System;
-using System.Net.WebSockets;
-using System.Threading.Tasks;
+﻿using System.Threading.Channels;
 
 namespace RxWebSocket
 {
-    public class SingleQueueSender : IWebSocketMessageSender
+    public class SingleQueueSender : WebSocketMessageSender
     {
-        public bool Send(string message)
+        private IWebSocketMessageSenderCore _core;
+
+        public SingleQueueSender(Channel<SentMessage> sentMessageQueue = null)
         {
-            throw new NotImplementedException();
+            _core = new SingleQueueSenderCoreCore(sentMessageQueue);
         }
 
-        public bool Send(byte[] message)
+        internal override IWebSocketMessageSenderCore AsCore()
         {
-            throw new NotImplementedException();
-        }
-
-        public bool Send(byte[] message, WebSocketMessageType messageType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Send(ArraySegment<byte> message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SendInstant(string message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SendInstant(byte[] message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SendInstant(byte[] message, WebSocketMessageType messageType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SendInstant(ArraySegment<byte> message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SendInstant(ArraySegment<byte> message, WebSocketMessageType messageType)
-        {
-            throw new NotImplementedException();
+            return _core;
         }
     }
 }

@@ -11,14 +11,7 @@ namespace RxWebSocket
     {
         public bool Send(string message)
         {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
-            }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (string) of the Send function is null or empty. Please correct it.");
-            }
+            return _webSocketMessageSenderCore.Send(message);
         }
 
         /// <summary>
@@ -28,14 +21,7 @@ namespace RxWebSocket
         /// <param name="message">Binary message to be sent</param>
         public bool Send(byte[] message)
         {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
-            }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
-            }
+            return _webSocketMessageSenderCore.Send(message);
         }
 
         /// <summary>
@@ -45,14 +31,7 @@ namespace RxWebSocket
         /// <param name="message">Binary message to be sent</param>
         public bool Send(ArraySegment<byte> message)
         {
-            if (ValidationUtils.ValidateInput(ref message))
-            {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(message, WebSocketMessageType.Binary));
-            }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the Send function is 0 Count. Please correct it.");
-            }
+            return _webSocketMessageSenderCore.Send(message);
         }
 
         /// <summary>
@@ -63,14 +42,7 @@ namespace RxWebSocket
         /// <param name="messageType"></param>
         public bool Send(byte[] message, WebSocketMessageType messageType)
         {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), messageType));
-            }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
-            }
+            return _webSocketMessageSenderCore.Send(message, messageType);
         }
 
         /// <summary>
@@ -81,14 +53,7 @@ namespace RxWebSocket
         /// <param name="messageType"></param>
         public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
-            if (ValidationUtils.ValidateInput(ref message))
-            {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(message, messageType));
-            }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the Send function is 0 Count. Please correct it.");
-            }
+            return _webSocketMessageSenderCore.Send(message, messageType);
         }
 
         /// <summary>
@@ -98,12 +63,7 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(string message)
         {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                return SendInternalSynchronized(new SentMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
-            }
-
-            throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
+            return _webSocketMessageSenderCore.SendInstant(message);
         }
 
         /// <summary>
@@ -113,22 +73,12 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(byte[] message)
         {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                return SendInternalSynchronized(new SentMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
-            }
-
-            throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
+            return _webSocketMessageSenderCore.SendInstant(message);
         }
 
         public Task SendInstant(byte[] message, WebSocketMessageType messageType)
         {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                return SendInternalSynchronized(new SentMessage(new ArraySegment<byte>(message), messageType));
-            }
-
-            throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
+            return _webSocketMessageSenderCore.SendInstant(message, messageType);
         }
 
         /// <summary>
@@ -138,91 +88,19 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(ArraySegment<byte> message)
         {
-            if (ValidationUtils.ValidateInput(ref message))
-            {
-                return SendInternalSynchronized(new SentMessage(message, WebSocketMessageType.Binary));
-            }
-
-            throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is 0 Count. Please correct it.");
+            return _webSocketMessageSenderCore.SendInstant(message);
         }
 
         public Task SendInstant(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
-            if (ValidationUtils.ValidateInput(ref message))
-            {
-                return SendInternalSynchronized(new SentMessage(message, messageType));
-            }
-
-            throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
-        }
-
-        private async Task SendMessageFromQueue()
-        {
-            try
-            {
-                while (await _sentMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
-                {
-                    while (_sentMessageQueueReader.TryRead(out var message))
-                    {
-
-                        try
-                        {
-                            await SendInternalSynchronized(message).ConfigureAwait(false);
-                        }
-                        catch (Exception e)
-                        {
-                            _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                            _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
-                        }
-
-                    }
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                // task was canceled, ignore
-            }
-            catch (OperationCanceledException)
-            {
-                // operation was canceled, ignore
-            }
-            catch (Exception e)
-            {
-                if (_cancellationAllJobs.IsCancellationRequested || IsDisposed)
-                {
-                    // disposing/canceling, do nothing and exit
-                    return;
-                }
-
-                _logger?.Error(e, FormatLogMessage($"Sending message thread failed, error: {e.Message}."));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendQueue));
-            }
+            return _webSocketMessageSenderCore.SendInstant(message, messageType);
         }
 
         private void StartBackgroundThreadForSendingMessage()
         {
 #pragma warning disable 4014
-            Task.Factory.StartNew(_ => SendMessageFromQueue(), TaskCreationOptions.LongRunning, _cancellationAllJobs.Token);
+            Task.Factory.StartNew(_ => _webSocketMessageSenderCore.SendMessageFromQueue(), TaskCreationOptions.LongRunning, _cancellationAllJobs.Token);
 #pragma warning restore 4014
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private async Task SendInternalSynchronized(SentMessage message)
-        {
-            using (await _sendLocker.LockAsync().ConfigureAwait(false))
-            {
-                if (!IsOpen)
-                {
-                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
-                    return;
-                }
-
-                _logger?.Log(FormatLogMessage($"Sending:  {message}"));
-
-                await _socket
-                    .SendAsync(message.Bytes, message.MessageType, true, _cancellationCurrentJobs.Token)
-                    .ConfigureAwait(false);
-            }
         }
     }
 }
