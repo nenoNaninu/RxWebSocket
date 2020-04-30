@@ -28,7 +28,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -45,7 +45,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return _sendMessageQueueWriter.TryWrite(message);
+                return _sentMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -71,7 +71,7 @@ namespace RxWebSocket
                 throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
             }
 
-            return _sendMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+            return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace RxWebSocket
                 throw new WebSocketBadInputException($"In BinaryWebSocketClient, the message type must be binary.");
             }
 
-            return _sendMessageQueueWriter.TryWrite(message);
+            return _sentMessageQueueWriter.TryWrite(message);
         }
 
         /// <summary>
@@ -169,9 +169,9 @@ namespace RxWebSocket
         {
             try
             {
-                while (await _sendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
+                while (await _sentMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    while (_sendMessageQueueReader.TryRead(out var message))
+                    while (_sentMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {

@@ -13,7 +13,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sendMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
+                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
             }
             else
             {
@@ -30,7 +30,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sendMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
+                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
             }
             else
             {
@@ -47,7 +47,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return _sendMessageQueueWriter.TryWrite(new SentMessage(message, WebSocketMessageType.Binary));
+                return _sentMessageQueueWriter.TryWrite(new SentMessage(message, WebSocketMessageType.Binary));
             }
             else
             {
@@ -65,7 +65,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sendMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), messageType));
+                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), messageType));
             }
             else
             {
@@ -83,7 +83,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return _sendMessageQueueWriter.TryWrite(new SentMessage(message, messageType));
+                return _sentMessageQueueWriter.TryWrite(new SentMessage(message, messageType));
             }
             else
             {
@@ -160,9 +160,9 @@ namespace RxWebSocket
         {
             try
             {
-                while (await _sendMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
+                while (await _sentMessageQueueReader.WaitToReadAsync(_cancellationAllJobs.Token).ConfigureAwait(false))
                 {
-                    while (_sendMessageQueueReader.TryRead(out var message))
+                    while (_sentMessageQueueReader.TryRead(out var message))
                     {
 
                         try

@@ -37,9 +37,9 @@ namespace RxWebSocket
         private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
-        private readonly Channel<ArraySegment<byte>> _sendMessageQueue;
-        private readonly ChannelReader<ArraySegment<byte>> _sendMessageQueueReader;
-        private readonly ChannelWriter<ArraySegment<byte>> _sendMessageQueueWriter;
+        private readonly Channel<ArraySegment<byte>> _sentMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _sentMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _sentMessageQueueWriter;
 
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
@@ -116,9 +116,9 @@ namespace RxWebSocket
                 return client;
             });
 
-            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _sendMessageQueueReader = _sendMessageQueue.Reader;
-            _sendMessageQueueWriter = _sendMessageQueue.Writer;
+            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueueReader = _sentMessageQueue.Reader;
+            _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
 
         /// <summary>
@@ -135,9 +135,9 @@ namespace RxWebSocket
 
             _memoryPool = new MemoryPool(ReceivingMemoryConfig.Default.InitialMemorySize, ReceivingMemoryConfig.Default.MarginSize, logger);
 
-            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _sendMessageQueueReader = _sendMessageQueue.Reader;
-            _sendMessageQueueWriter = _sendMessageQueue.Writer;
+            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueueReader = _sentMessageQueue.Reader;
+            _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
 
         /// <summary>
@@ -155,9 +155,9 @@ namespace RxWebSocket
 
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
-            _sendMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _sendMessageQueueReader = _sendMessageQueue.Reader;
-            _sendMessageQueueWriter = _sendMessageQueue.Writer;
+            _sentMessageQueue = sendMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueueReader = _sentMessageQueue.Reader;
+            _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
 
         public WebSocket NativeSocket => _socket;
@@ -252,7 +252,7 @@ namespace RxWebSocket
                 _cancellationAllJobs.Dispose();
                 _cancellationCurrentJobs.Dispose();
 
-                _sendMessageQueueWriter.Complete();
+                _sentMessageQueueWriter.Complete();
 
                 _binaryMessageReceivedSubject.Dispose();
                 _textMessageReceivedSubject.Dispose();
