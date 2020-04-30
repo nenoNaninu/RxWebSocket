@@ -22,7 +22,7 @@ namespace RxWebSocket
         /// Triggered after the connection was lost.
         /// </summary>
         IObservable<CloseMessage> CloseMessageReceived { get; }
-        
+
         IObservable<WebSocketExceptionDetail> ExceptionHappened { get; }
 
         /// <summary>
@@ -33,17 +33,10 @@ namespace RxWebSocket
         bool IsOpen { get; }
 
         bool IsClosed { get; }
-        
+
         bool IsDisposed { get; }
-        
-        int QueueCount { get; }
 
         WebSocketState WebSocketState { get; }
-
-        /// <summary>
-        /// Returns currently used native websocket client.
-        /// </summary>
-        ClientWebSocket NativeClient { get; }
 
         /// <summary>
         /// Returns currently used native websocket.
@@ -55,6 +48,8 @@ namespace RxWebSocket
         /// Default is UTF8
         /// </summary>
         Encoding MessageEncoding { get; set; }
+
+        Task WaitUntilClose { get; }
 
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
@@ -69,7 +64,7 @@ namespace RxWebSocket
         /// <param name="dispose"></param>
         /// <returns>Returns true if close was successful</returns>
         Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose);
-        
+
         /// <summary>
         /// close websocket connection.
         /// </summary>
@@ -83,25 +78,25 @@ namespace RxWebSocket
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        void Send(string message);
-        
-        /// <summary>
-        /// Send binary message to the websocket channel. 
-        /// The message is inserted into the queue, and the actual sending takes place in background thread.
-        /// </summary>
-        /// <param name="message">Binary message to be sent</param>
-        void Send(byte[] message);
-
-        void Send(byte[] message, WebSocketMessageType messageType);
+        bool Send(string message);
 
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
-        void Send(ArraySegment<byte> message);
-        
-        void Send(ArraySegment<byte> message, WebSocketMessageType messageType);
+        bool Send(byte[] message);
+
+        bool Send(byte[] message, WebSocketMessageType messageType);
+
+        /// <summary>
+        /// Send binary message to the websocket channel. 
+        /// The message is inserted into the queue, and the actual sending takes place in background thread.
+        /// </summary>
+        /// <param name="message">Binary message to be sent</param>
+        bool Send(ArraySegment<byte> message);
+
+        bool Send(ArraySegment<byte> message, WebSocketMessageType messageType);
 
         /// <summary>
         /// Send message to the websocket channel. 
@@ -109,7 +104,7 @@ namespace RxWebSocket
         /// </summary>
         /// <param name="message">Message to be sent</param>
         Task SendInstant(string message);
-        
+
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// It doesn't use a queue, 
@@ -117,8 +112,8 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         Task SendInstant(byte[] message);
 
-        Task SendInstant(byte[] message,  WebSocketMessageType messageType);
-        
+        Task SendInstant(byte[] message, WebSocketMessageType messageType);
+
         /// <summary>
         /// Send binary message to the websocket channel. 
         /// It doesn't use a queue, 
@@ -126,6 +121,6 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         Task SendInstant(ArraySegment<byte> message);
 
-        Task SendInstant(ArraySegment<byte> message,  WebSocketMessageType messageType);
+        Task SendInstant(ArraySegment<byte> message, WebSocketMessageType messageType);
     }
 }

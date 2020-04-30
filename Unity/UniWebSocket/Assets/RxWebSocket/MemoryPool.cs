@@ -3,7 +3,7 @@ using RxWebSocket.Logging;
 
 namespace RxWebSocket
 {
-    internal class MemoryPool
+    public class MemoryPool
     {
         private byte[] _memoryPool;
         private int _offset = 0;
