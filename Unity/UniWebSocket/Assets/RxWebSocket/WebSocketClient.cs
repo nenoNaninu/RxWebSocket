@@ -209,6 +209,9 @@ namespace RxWebSocket
                     _logger?.Log(FormatLogMessage("Connecting..."));
                 }
                 _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
+
+                _webSocketMessageSenderCore.SetSocket(_socket);
+
                 _logger?.Log(FormatLogMessage("Start Listening..."));
                 WaitUntilClose = Listen(_socket, token);
                 LastReceivedTime = DateTime.UtcNow;
