@@ -11,7 +11,7 @@ namespace RxWebSocket
     {
         public bool Send(string message)
         {
-            return _webSocketMessageSenderCore.Send(message);
+            return _webSocketMessageSender.Send(message);
         }
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace RxWebSocket
         /// <param name="message">Binary message to be sent</param>
         public bool Send(byte[] message)
         {
-            return _webSocketMessageSenderCore.Send(message);
+            return _webSocketMessageSender.Send(message);
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace RxWebSocket
         /// <param name="message">Binary message to be sent</param>
         public bool Send(ArraySegment<byte> message)
         {
-            return _webSocketMessageSenderCore.Send(message);
+            return _webSocketMessageSender.Send(message);
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace RxWebSocket
         /// <param name="messageType"></param>
         public bool Send(byte[] message, WebSocketMessageType messageType)
         {
-            return _webSocketMessageSenderCore.Send(message, messageType);
+            return _webSocketMessageSender.Send(message, messageType);
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace RxWebSocket
         /// <param name="messageType"></param>
         public bool Send(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
-            return _webSocketMessageSenderCore.Send(message, messageType);
+            return _webSocketMessageSender.Send(message, messageType);
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(string message)
         {
-            return _webSocketMessageSenderCore.SendInstant(message);
+            return _webSocketMessageSender.SendInstant(message);
         }
 
         /// <summary>
@@ -73,12 +73,12 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(byte[] message)
         {
-            return _webSocketMessageSenderCore.SendInstant(message);
+            return _webSocketMessageSender.SendInstant(message);
         }
 
         public Task SendInstant(byte[] message, WebSocketMessageType messageType)
         {
-            return _webSocketMessageSenderCore.SendInstant(message, messageType);
+            return _webSocketMessageSender.SendInstant(message, messageType);
         }
 
         /// <summary>
@@ -88,18 +88,18 @@ namespace RxWebSocket
         /// <param name="message">Message to be sent</param>
         public Task SendInstant(ArraySegment<byte> message)
         {
-            return _webSocketMessageSenderCore.SendInstant(message);
+            return _webSocketMessageSender.SendInstant(message);
         }
 
         public Task SendInstant(ArraySegment<byte> message, WebSocketMessageType messageType)
         {
-            return _webSocketMessageSenderCore.SendInstant(message, messageType);
+            return _webSocketMessageSender.SendInstant(message, messageType);
         }
 
         private void StartBackgroundThreadForSendingMessage()
         {
 #pragma warning disable 4014
-            Task.Factory.StartNew(_ => _webSocketMessageSenderCore.SendMessageFromQueue(), TaskCreationOptions.LongRunning, _cancellationAllJobs.Token);
+            Task.Factory.StartNew(_ => _webSocketMessageSender.SendMessageFromQueue(), TaskCreationOptions.LongRunning, _cancellationAllJobs.Token);
 #pragma warning restore 4014
         }
     }

@@ -4,7 +4,7 @@ namespace RxWebSocket
 {
     public class SingleQueueSender : WebSocketMessageSender
     {
-        private IWebSocketMessageSenderCore _core;
+        private readonly IWebSocketMessageSenderCore _core;
 
         public SingleQueueSender(Channel<SentMessage> sentMessageQueue = null)
         {

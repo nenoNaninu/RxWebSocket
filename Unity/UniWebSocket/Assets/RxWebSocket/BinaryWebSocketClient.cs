@@ -174,10 +174,10 @@ namespace RxWebSocket
 
         public IObservable<byte[]> BinaryMessageReceived => _binaryMessageReceivedSubject.AsObservable();
 
-        public IObservable<byte[]> TextMessageReceived => _textMessageReceivedSubject.AsObservable();
+        public IObservable<byte[]> RawTextMessageReceived => _textMessageReceivedSubject.AsObservable();
 
-        public IObservable<string> TextMessageReceivedAutoDecode =>
-            TextMessageReceived.Select(MessageEncoding.GetString);
+        public IObservable<string> TextMessageReceived =>
+            RawTextMessageReceived.Select(MessageEncoding.GetString);
 
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 

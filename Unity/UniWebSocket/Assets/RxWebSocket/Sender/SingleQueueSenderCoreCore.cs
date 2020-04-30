@@ -13,7 +13,7 @@ using UniRx;
 
 namespace RxWebSocket
 {
-    public class SingleQueueSenderCoreCore : IWebSocketMessageSenderCore
+    internal class SingleQueueSenderCoreCore : IWebSocketMessageSenderCore
     {
         private readonly Channel<SentMessage> _sentMessageQueue;
         private readonly ChannelReader<SentMessage> _sentMessageQueueReader;
@@ -133,7 +133,6 @@ namespace RxWebSocket
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
-
         }
 
         public Task SendInstant(byte[] message, WebSocketMessageType messageType)
@@ -154,7 +153,6 @@ namespace RxWebSocket
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is 0 Count. Please correct it.");
-
         }
 
         public Task SendInstant(ArraySegment<byte> message, WebSocketMessageType messageType)
@@ -165,7 +163,6 @@ namespace RxWebSocket
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
-
         }
 
         public async Task SendMessageFromQueue()

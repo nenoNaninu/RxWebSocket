@@ -30,7 +30,7 @@ namespace RxWebSocket
         {
             if (MessageType == WebSocketMessageType.Text)
             {
-                return $"Type binary, length: {Binary?.Length}";
+                return $"Type text, length: {Binary?.Length}";
             }
 
             return $"Type binary, length: {Binary?.Length}";

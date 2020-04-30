@@ -38,7 +38,7 @@ namespace RxWebSocket
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
 
-        private readonly IWebSocketMessageSenderCore _webSocketMessageSenderCore;
+        private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
 
         private WebSocket _socket;
 
@@ -112,10 +112,10 @@ namespace RxWebSocket
                 return client;
             });
 
-            _webSocketMessageSenderCore = messageSender?.AsCore() ?? new SingleQueueSenderCoreCore();
-            _webSocketMessageSenderCore.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
+            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCoreCore();
+            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
             
-            _webSocketMessageSenderCore
+            _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
         }
@@ -135,6 +135,7 @@ namespace RxWebSocket
         /// <param name="receivingMemoryConfig"></param>
         /// <param name="logger"></param>
         /// <param name="connectedSocket">Already connected socket.</param>
+        /// <param name="messageSender"></param>
         public WebSocketClient(WebSocket connectedSocket, ILogger logger, ReceivingMemoryConfig receivingMemoryConfig, WebSocketMessageSender messageSender = null)
         {
             Url = null;
@@ -144,10 +145,10 @@ namespace RxWebSocket
 
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
-            _webSocketMessageSenderCore = messageSender?.AsCore() ?? new SingleQueueSenderCoreCore();
-            _webSocketMessageSenderCore.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
+            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCoreCore();
+            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
             
-            _webSocketMessageSenderCore
+            _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
         }
@@ -165,9 +166,9 @@ namespace RxWebSocket
 
         public IObservable<byte[]> BinaryMessageReceived => _binaryMessageReceivedSubject.AsObservable();
 
-        public IObservable<byte[]> TextMessageReceived => _textMessageReceivedSubject.AsObservable();
+        public IObservable<byte[]> RawTextMessageReceived => _textMessageReceivedSubject.AsObservable();
 
-        public IObservable<string> TextMessageReceivedAutoDecode => TextMessageReceived.Select(x => MessageEncoding.GetString(x));
+        public IObservable<string> TextMessageReceived => RawTextMessageReceived.Select(MessageEncoding.GetString);
 
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
@@ -210,7 +211,7 @@ namespace RxWebSocket
                 }
                 _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
 
-                _webSocketMessageSenderCore.SetSocket(_socket);
+                _webSocketMessageSender.SetSocket(_socket);
 
                 _logger?.Log(FormatLogMessage("Start Listening..."));
                 WaitUntilClose = Listen(_socket, token);
@@ -248,7 +249,7 @@ namespace RxWebSocket
                 _cancellationAllJobs.Dispose();
                 _cancellationCurrentJobs.Dispose();
 
-                _webSocketMessageSenderCore.Dispose();
+                _webSocketMessageSender.Dispose();
 
                 _binaryMessageReceivedSubject.Dispose();
                 _textMessageReceivedSubject.Dispose();
