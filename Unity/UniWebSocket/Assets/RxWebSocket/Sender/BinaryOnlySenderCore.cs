@@ -248,7 +248,7 @@ namespace RxWebSocket
                     return;
                 }
 
-                _logger?.Log(FormatLogMessage($"Sending:  {message}"));
+                _logger?.Log(FormatLogMessage($"Sending: Type Binary, length {message.Count}"));
 
                 await _socket
                     .SendAsync(message, WebSocketMessageType.Binary, true, _sendingCancellationToken)
