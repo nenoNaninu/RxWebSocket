@@ -19,11 +19,11 @@ using UniRx;
 
 namespace RxWebSocket
 {
-    internal class SingleQueueSenderCore : IWebSocketMessageSender
+    internal class TextOnlySenderCore : IWebSocketMessageSender
     {
-        private readonly Channel<SentMessage> _sentMessageQueue;
-        private readonly ChannelReader<SentMessage> _sentMessageQueueReader;
-        private readonly ChannelWriter<SentMessage> _sentMessageQueueWriter;
+        private readonly Channel<ArraySegment<byte>> _sentMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _sentMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _sentMessageQueueWriter;
         private readonly AsyncLock _sendLocker = new AsyncLock();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
@@ -39,16 +39,14 @@ namespace RxWebSocket
 
         public IObservable<WebSocketExceptionDetail> ExceptionHappenedInSending => _exceptionSubject.AsObservable();
 
-        public SingleQueueSenderCore(Channel<SentMessage> sentMessageQueue = null)
+        public TextOnlySenderCore(Channel<ArraySegment<byte>> sentMessageQueue = null)
         {
-            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<SentMessage>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
             _sentMessageQueueReader = _sentMessageQueue.Reader;
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
 
-        public void SetInternal(
-            CancellationToken sendingCancellationToken, 
-            CancellationToken waitQueueCancellationToken,
+        public void SetInternal(CancellationToken sendingCancellationToken, CancellationToken waitQueueCancellationToken,
             ILogger logger)
         {
             _sendingCancellationToken = sendingCancellationToken;
@@ -65,7 +63,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
             }
             else
             {
@@ -77,19 +75,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
-            }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
-            }
-        }
-
-        public bool Send(byte[] message, WebSocketMessageType messageType)
-        {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(new ArraySegment<byte>(message), messageType));
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -101,7 +87,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(message, WebSocketMessageType.Binary));
+                return _sentMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -109,11 +95,32 @@ namespace RxWebSocket
             }
         }
 
+        public bool Send(byte[] message, WebSocketMessageType messageType)
+        {
+            if (ValidationUtils.ValidateInput(message))
+            {
+
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                }
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+            }
+            else
+            {
+                throw new WebSocketBadInputException($"Input message (byte[]) of the Send function is null or 0 Length. Please correct it.");
+            }
+        }
+
         public bool Send(ref ArraySegment<byte> message, WebSocketMessageType messageType)
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return _sentMessageQueueWriter.TryWrite(new SentMessage(message, messageType));
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                }
+                return _sentMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -125,7 +132,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(new SentMessage(new ArraySegment<byte>(MessageEncoding.GetBytes(message)), WebSocketMessageType.Text));
+                return SendInternalSynchronized(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
             }
 
             throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
@@ -135,7 +142,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(new SentMessage(new ArraySegment<byte>(message), WebSocketMessageType.Binary));
+                return SendInternalSynchronized(new ArraySegment<byte>(message));
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -145,7 +152,13 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(new SentMessage(new ArraySegment<byte>(message), messageType));
+
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                }
+
+                return SendInternalSynchronized(new ArraySegment<byte>(message));
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -155,7 +168,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return SendInternalSynchronized(new SentMessage(message, WebSocketMessageType.Binary));
+                return SendInternalSynchronized(message);
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is 0 Count. Please correct it.");
@@ -165,7 +178,13 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return SendInternalSynchronized(new SentMessage(message, messageType));
+
+                if (messageType != WebSocketMessageType.Text)
+                {
+                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                }
+
+                return SendInternalSynchronized(message);
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -218,7 +237,7 @@ namespace RxWebSocket
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private async Task SendInternalSynchronized(SentMessage message)
+        private async Task SendInternalSynchronized(ArraySegment<byte> message)
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
@@ -231,7 +250,7 @@ namespace RxWebSocket
                 _logger?.Log(FormatLogMessage($"Sending:  {message}"));
 
                 await _socket
-                    .SendAsync(message.Bytes, message.MessageType, true, _sendingCancellationToken)
+                    .SendAsync(message, WebSocketMessageType.Text, true, _sendingCancellationToken)
                     .ConfigureAwait(false);
             }
         }

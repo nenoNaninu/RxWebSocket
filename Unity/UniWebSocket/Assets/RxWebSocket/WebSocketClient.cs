@@ -38,7 +38,7 @@ namespace RxWebSocket
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
 
-        private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
+        private readonly IWebSocketMessageSender _webSocketMessageSender;
 
         private WebSocket _socket;
 
@@ -112,7 +112,7 @@ namespace RxWebSocket
                 return client;
             });
 
-            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCoreCore();
+            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
             
             _webSocketMessageSender
@@ -145,7 +145,7 @@ namespace RxWebSocket
 
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
-            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCoreCore();
+            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
             
             _webSocketMessageSender

@@ -1,0 +1,10 @@
+﻿[*.{cs,vb}]
+
+# IDE0009: メンバー アクセスを修飾する必要があります。
+dotnet_style_qualification_for_field = false:suggestion
+
+# IDE0009: メンバー アクセスを修飾する必要があります。
+dotnet_style_qualification_for_method = false:suggestion
+
+# IDE0009: メンバー アクセスを修飾する必要があります。
+dotnet_style_qualification_for_property = false:suggestion

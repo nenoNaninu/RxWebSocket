@@ -7,7 +7,7 @@ using RxWebSocket.Logging;
 
 namespace RxWebSocket
 {
-    internal interface IWebSocketMessageSenderCore : IDisposable
+    internal interface IWebSocketMessageSender : IDisposable
     {
         /// <summary>
         /// Sets used encoding for sending and receiving text messages.
@@ -15,7 +15,7 @@ namespace RxWebSocket
         /// </summary>
         Encoding MessageEncoding { get; }
 
-        Task SendMessageFromQueue();
+        void SendMessageFromQueue();
 
         void SetInternal(
             CancellationToken sendingCancellationToken,
@@ -47,9 +47,9 @@ namespace RxWebSocket
         /// The message is inserted into the queue, and the actual sending takes place in background thread.
         /// </summary>
         /// <param name="message">Binary message to be sent</param>
-        bool Send(ArraySegment<byte> message);
+        bool Send(ref ArraySegment<byte> message);
 
-        bool Send(ArraySegment<byte> message, WebSocketMessageType messageType);
+        bool Send(ref ArraySegment<byte> message, WebSocketMessageType messageType);
 
         /// <summary>
         /// Send message to the websocket channel. 
@@ -72,8 +72,8 @@ namespace RxWebSocket
         /// It doesn't use a queue, 
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        Task SendInstant(ArraySegment<byte> message);
+        Task SendInstant(ref ArraySegment<byte> message);
 
-        Task SendInstant(ArraySegment<byte> message, WebSocketMessageType messageType);
+        Task SendInstant(ref ArraySegment<byte> message, WebSocketMessageType messageType);
     }
 }

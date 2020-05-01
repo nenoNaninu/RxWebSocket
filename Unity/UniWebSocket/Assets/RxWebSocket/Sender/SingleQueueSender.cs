@@ -4,14 +4,14 @@ namespace RxWebSocket
 {
     public class SingleQueueSender : WebSocketMessageSender
     {
-        private readonly IWebSocketMessageSenderCore _core;
+        private readonly IWebSocketMessageSender _core;
 
         public SingleQueueSender(Channel<SentMessage> sentMessageQueue = null)
         {
-            _core = new SingleQueueSenderCoreCore(sentMessageQueue);
+            _core = new SingleQueueSenderCore(sentMessageQueue);
         }
 
-        internal override IWebSocketMessageSenderCore AsCore()
+        internal override IWebSocketMessageSender AsCore()
         {
             return _core;
         }
