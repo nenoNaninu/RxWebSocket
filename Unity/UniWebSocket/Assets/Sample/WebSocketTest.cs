@@ -42,12 +42,6 @@ namespace RxWebSocket.Sample
                 })
                 .AddTo(this);
 
-            Task.Run(async () =>
-            {
-                await Task.Delay(5000);
-                _client.Send("Delay Message!!!!!!!!!!!!!!!!");
-            });
-
             await _client.ConnectAndStartListening();
             _client.Send("はじめまーす");
         }

@@ -35,7 +35,7 @@ namespace RxWebSocket.Sample
                 .Subscribe(x => presenter.OnMessageReceived(x.Name, x.Message));
 
             _presenter.OnDestroy
-                .Subscribe(async _ =>
+                .Subscribe( _ =>
                 {
                     _chatClient.Dispose();
                 });
