@@ -15,6 +15,8 @@ namespace RxWebSocket
         /// </summary>
         Encoding MessageEncoding { get; }
 
+        string Name { get; set; }
+
         void SendMessageFromQueue();
 
         void SetInternal(

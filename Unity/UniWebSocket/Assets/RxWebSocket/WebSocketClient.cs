@@ -11,6 +11,7 @@ using RxWebSocket.Logging;
 #if NETSTANDARD2_1 || NETSTANDARD2_0
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
+using Reactive.Bindings;
 #else
 using UniRx;
 #endif
@@ -44,10 +45,16 @@ namespace RxWebSocket
 
         public Uri Url { get; }
 
+        private ReactiveProperty<string> _name = new ReactiveProperty<string>("CLIENT");
+
         /// <summary>
         /// For logging purpose.
         /// </summary>
-        public string Name { get; set; } = "CLIENT";
+        public string Name
+        {
+            get => _name.Value;
+            set => _name.Value = value;
+        }
 
         public bool IsDisposed { get; private set; }
 
@@ -118,6 +125,8 @@ namespace RxWebSocket
             _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
+
+            _name.Subscribe(x => _webSocketMessageSender.Name = x);
         }
 
         /// <summary>
@@ -151,6 +160,8 @@ namespace RxWebSocket
             _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
+
+            _name.Subscribe(x => _webSocketMessageSender.Name = x);
         }
 
         public WebSocket NativeSocket => _socket;
@@ -255,6 +266,7 @@ namespace RxWebSocket
                 _textMessageReceivedSubject.Dispose();
                 _closeMessageReceivedSubject.Dispose();
                 _exceptionSubject.Dispose();
+                _name.Dispose();
             }
             catch (Exception e)
             {

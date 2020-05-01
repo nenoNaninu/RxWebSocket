@@ -25,7 +25,7 @@ namespace RxWebSocket.Sample
 
         public async Task Connect(string name, string uri)
         {
-            _webSocketClient = new WebSocketClient(new Uri(uri), _logger, new BinaryOnlySender());
+            _webSocketClient = new WebSocketClient(new Uri(uri), _logger, new DoubleQueueSender());
 
             _webSocketClient.BinaryMessageReceived
                 .Select(bin => JsonSerializer.Deserialize<ChatMessage>(bin))

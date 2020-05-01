@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -27,7 +28,13 @@ namespace WebSocketChat
         {
             services.AddControllers();
             services.AddWebSocketChatHandler();
-            
+
+            //services.AddHttpsRedirection(options =>
+            //{
+            //    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+            //    options.HttpsPort = 5001;
+            //});
+
             // var serviceProvider = services.BuildServiceProvider();
             // var logger = serviceProvider.GetService<ILogger<ChatHandler>>();
             // services.AddSingleton(typeof(ILogger), logger);
@@ -41,7 +48,7 @@ namespace WebSocketChat
                 app.UseDeveloperExceptionPage();
             }
 
-//            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
 

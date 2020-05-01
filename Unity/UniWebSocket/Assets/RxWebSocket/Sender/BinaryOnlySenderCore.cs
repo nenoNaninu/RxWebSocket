@@ -33,7 +33,7 @@ namespace RxWebSocket
 
         public Encoding MessageEncoding { get; } = Encoding.UTF8;
         public bool IsDisposed { get; private set; }
-        public string Name { get; internal set; } = "CLIENT";
+        public string Name { get; set; } = "CLIENT";
 
         public bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
 

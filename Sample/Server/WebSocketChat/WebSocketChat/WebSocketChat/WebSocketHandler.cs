@@ -6,13 +6,13 @@ namespace WebSocketChat
 {
     public abstract class WebSocketHandler
     {
-        private BlockingCollection<WebSocketWithName> _webSocketCollection = new BlockingCollection<WebSocketWithName>();
+        private ConcurrentDictionary<WebSocketWithName, WebSocketWithName> _webSocketCollection = new ConcurrentDictionary<WebSocketWithName, WebSocketWithName>();
 
         public WebSocketHandler()
         {
             Console.CancelKeyPress += (sender, args) =>
             {
-                foreach (var socket in _webSocketCollection)
+                foreach (var socket in _webSocketCollection.Values)
                 {
                     socket.WebSocketClient.CloseAsync(WebSocketCloseStatus.InternalServerError, "press ctrl+c", true).Wait();
                 }
@@ -20,12 +20,14 @@ namespace WebSocketChat
         }
         public virtual void OnConnected(WebSocketWithName socket)
         {
-            _webSocketCollection.Add(socket);
+            _webSocketCollection[socket] = socket;
+            //_webSocketCollection.Add(socket);
         }
 
         public virtual void OnDisconnected(WebSocketWithName socket)
         {
-            _webSocketCollection.TryTake(out socket);
+            _webSocketCollection.TryRemove(socket, out var _);
+            //_webSocketCollection.TryTake(out socket);
         }
 
         public void SendMessageAsync(WebSocketWithName socket, string message)
@@ -40,7 +42,7 @@ namespace WebSocketChat
 
         public void SendMessageToAllAsync(string message)
         {
-            foreach (var socket in _webSocketCollection)
+            foreach (var socket in _webSocketCollection.Values)
             {
                 if (socket.WebSocketClient.IsOpen)
                 {
@@ -61,7 +63,7 @@ namespace WebSocketChat
 
         public void SendMessageToAllAsync(byte[] message)
         {
-            foreach (var socket in _webSocketCollection)
+            foreach (var socket in _webSocketCollection.Values)
             {
                 if (socket.WebSocketClient.IsOpen)
                 {
