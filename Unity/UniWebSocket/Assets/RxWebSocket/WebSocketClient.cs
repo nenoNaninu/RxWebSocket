@@ -72,7 +72,7 @@ namespace RxWebSocket
         /// <param name="messageSender"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, WebSocketMessageSender messageSender = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, messageSender, null, MakeConnectionFactory(clientFactory))
+            : this(url, ReceivingMemoryConfig.Default, messageSender, null, clientFactory)
         {
         }
 
@@ -81,7 +81,7 @@ namespace RxWebSocket
         /// <param name="messageSender"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, ILogger logger, WebSocketMessageSender messageSender = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, messageSender, logger, MakeConnectionFactory(clientFactory))
+            : this(url, ReceivingMemoryConfig.Default, messageSender, logger, clientFactory)
         {
         }
 
@@ -91,16 +91,16 @@ namespace RxWebSocket
         /// <param name="messageSender"></param>
         /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(Uri url, ReceivingMemoryConfig receivingMemoryConfig, ILogger logger = null, WebSocketMessageSender messageSender = null, Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryConfig, messageSender, logger, MakeConnectionFactory(clientFactory))
+            : this(url, receivingMemoryConfig, messageSender, logger, clientFactory)
         {
         }
 
         public WebSocketClient(
-            Uri url, 
+            Uri url,
             ReceivingMemoryConfig receivingMemoryConfig,
-            WebSocketMessageSender messageSender, 
-            ILogger logger, 
-            Func<Uri, CancellationToken, Task<WebSocket>> connectionFactory)
+            WebSocketMessageSender messageSender,
+            ILogger logger,
+            Func<ClientWebSocket> clientFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
@@ -112,26 +112,19 @@ namespace RxWebSocket
             _logger = logger;
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
-            _connectionFactory = connectionFactory ?? (async (uri, token) =>
-            {
-                var client = new ClientWebSocket
-                {
-                    Options = { KeepAliveInterval = new TimeSpan(0, 0, 0, 10) }
-                };
-                await client.ConnectAsync(uri, token).ConfigureAwait(false);
-                return client;
-            });
+            clientFactory = clientFactory ?? MakeDefaultClientFactory(); //cannot use =?? in unity
+            _connectionFactory = MakeConnectionFactory(clientFactory);
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
-            
+
             _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
         }
 
         public WebSocketClient(WebSocket connectedSocket, ILogger logger = null, WebSocketMessageSender messageSender = null)
-            :this(connectedSocket, logger, ReceivingMemoryConfig.Default, messageSender)
+            : this(connectedSocket, logger, ReceivingMemoryConfig.Default, messageSender)
         {
         }
 
@@ -146,7 +139,7 @@ namespace RxWebSocket
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
-            
+
             _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
@@ -165,6 +158,8 @@ namespace RxWebSocket
 
         public IObservable<string> TextMessageReceived => RawTextMessageReceived.Select(MessageEncoding.GetString);
 
+        /// Invoke when a close message is received,
+        /// before disconnecting the connection in normal system.
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
         public IObservable<WebSocketExceptionDetail> ExceptionHappened => _exceptionSubject.AsObservable();
@@ -305,13 +300,16 @@ namespace RxWebSocket
             }
         }
 
+        private static Func<ClientWebSocket> MakeDefaultClientFactory()
+        {
+            return () => new ClientWebSocket
+            {
+                Options = { KeepAliveInterval = TimeSpan.FromSeconds(10) }
+            };
+        }
+
         private static Func<Uri, CancellationToken, Task<WebSocket>> MakeConnectionFactory(Func<ClientWebSocket> clientFactory)
         {
-            if (clientFactory == null)
-            {
-                return null;
-            }
-
             return (async (uri, token) =>
             {
                 var client = clientFactory();
@@ -346,7 +344,7 @@ namespace RxWebSocket
 
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
-                        var receivedText =_memoryPool.ToArray();
+                        var receivedText = _memoryPool.ToArray();
                         _logger?.Log(FormatLogMessage($"Received: Type Text: {receivedText}"));
                         _textMessageReceivedSubject.OnNext(receivedText);
                     }

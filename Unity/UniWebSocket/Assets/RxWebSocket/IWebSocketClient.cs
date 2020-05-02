@@ -17,7 +17,7 @@ namespace RxWebSocket
 
         /// <summary>
         /// Invoke when a close message is received,
-        /// before disconnecting the connection.
+        /// before disconnecting the connection in normal system.
         /// </summary>
         IObservable<CloseMessage> CloseMessageReceived { get; }
 

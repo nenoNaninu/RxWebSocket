@@ -22,30 +22,45 @@ dotnet add package RxWebSocket
 - [UniRx](https://github.com/neuecc/UniRx/releases)
 
 # Usage
-We prepared two classes.
-- `WebSocketClient`
-  - it is common.
-- `BinaryWebSocketClient`
-    - if you only send binary type, you can use this. 
-    `BinaryWebSocketClient` can send only binary type, but has less allocation.
+The main class is `WebSocketClient`.
+Various settings can be made in the constructor.
+- Logger
+  - If you are using unity, you can use the `UnityConsoleLogger` class. It is a simple wrapper such as Debug.log ().
+  - if you use `Microsoft.Extensions.Logging.ILogger<T>` in ASP.NET Core or Console environment, it is easy to integrate using  `AsWebSocketLogger()` which is extension method.
+- [Memory settings for receiving](#memory-settings-for-receiving). 
+  - You can set how to use the memory when receiving messages.
+  - By default, a 32KB buffer is allocated. The buffer is automatically expanded as needed.
+  - If you know that you will receive large messages, a larger initial memory allocation will reduce wasted allocation.
+- [Message sending method setting](#sending-options).
+  - Internally, System.Threading.Channels is run in the background to send messages. 
+  - You can choose various sending methods by using the [these classes](#sending-options).
+- [WebSocket Options(KeepAliveInterval, Proxy,...)](#websocket-options)
+  - If you want to make detailed settings for WebSocket, use the factory method. This is because the `class ClientWebSocketOptions`  constructor is interlnal. You can set [like this](#websocket-options).
 
-## Client
+
+## Client Code
 ```csharp
 #if Unity
-var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
-//or
-var binaryWebSocketClient = new BinaryWebSocketClient(new Uri("wss://~~~"), new UnityConsoleLogger());
+var webSocketClient = new WebSocketClient(new Uri("wss://echo.websocket.org/"), new UnityConsoleLogger());
 #else 
 Microsoft.Extensions.Logging.ILogger<T> logger;
-var webSocketClient = new WebSocketClient(new Uri("wss://~~~"), logger.AsWebSocketLogger());
+var webSocketClient = new WebSocketClient(new Uri("wss://echo.websocket.org/"), logger.AsWebSocketLogger());
 #endif
 
+//IObservable<byte[]>
 webSocketClient.BinaryMessageReceived
     .Subscribe(x => DoSomething(x));
-    
+
+// IObservable<string>
 webSocketClient.TextMessageReceived
     .Subscribe(x => DoSomething(x));
 
+// IObservable<byte[]>
+webSocketClient.RawTextMessageReceived
+    .Subscribe(x => DoSomething(x));
+
+/// Invoke when a close message is received,
+/// before disconnecting the connection in normal system.
 webSocketClient.CloseMessageReceived
     .Subscribe(x => DoSomething(x));
 
@@ -53,20 +68,20 @@ webSocketClient.CloseMessageReceived
 webSocketClient.ExceptionHappened
     .Subscribe(x => DoSomething(x));
 
-
 try
 {
     //connect and start listening in background thread.
     //await until websocket can connect.
     await webSocketClient.ConnectAndStartListening();
 
-    //send bin
+    
+    //Send() method return bool.
+    //If you set the channel created by Channel.CreateBounded () when setting the transmission method, 
+    //false may be returned if it is not possible to write to the queue.
+    //Send() function end as soon as writing is completed in the queue. 
+    //Therefore, it does not matter whether the sending is finished.
     byte[] array = MakeSomeArray();
     webSocketClient.Send(array);
-
-    //send text
-    //The Send function guarantees the transmission order using queue.
-    //It doesn't wait for the transmission to complete.
     webSocketClient.Send("string or byte[]");
 
     //The SendInstant function ignores the queue used inside the Send function and sends it immediately.
@@ -81,7 +96,7 @@ catch
 }
 
 ```
-## Server ([ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet))
+## Server Code ([ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet))
 ```csharp
 HttpContext context;
 Microsoft.Extensions.Logging.ILogger<T> logger;
@@ -90,6 +105,7 @@ if (!context.WebSockets.IsWebSocketRequest) return;
 
 var socket = await context.WebSockets.AcceptWebSocketAsync();
 
+//You can set the connected socket in the constructor.
 using var webSocketClient = new WebSocketClient(socket, logger.AsWebSocketLogger());
 
 // subscribe setting...
@@ -97,11 +113,44 @@ using var webSocketClient = new WebSocketClient(socket, logger.AsWebSocketLogger
 await webSocketClient.ConnectAndStartListening();
 
 //If you do not wait, the connection will be disconnected.
-await webSocketClient.Wait;
+await webSocketClient.WaitUntilClose;
 ```
-[Here](https://github.com/nenoNaninu/RxWebSocket/blob/master/Sample/Server/WebSocketChat/WebSocketChat/WebSocketChat/WebSocketChatMiddleware.cs#L29-L47) is sample.
+[Here](Sample/Server/WebSocketChat/WebSocketChat/WebSocketChat/WebSocketChatMiddleware.cs#L29-L47) is sample.
 
-## Options
+# Memory settings for receiving.
+You can set how to use the memory when receiving messages.
+By default, a 32KB buffer is allocated. The buffer is automatically expanded as needed.
+If you know that you will receive large messages, a larger initial memory allocation will reduce wasted allocation.
+You can use `ReceivingMemoryConfig`.
+```csharp
+// 1024KB
+var memory = new ReceivingMemoryConfig(1024 * 1024);
+var client = new WebSocketClient(uri, memory, _logger);
+```
+
+# Sending options
+Internally, System.Threading.Channels is run in the background to send messages. 
+You can choose various sending methods by using the following class.
+
+- `SingleQueueSender`
+  - By using a single queue, the sending order of both Binary type and Text Type is guaranteed.
+- `DoubleQueueSender`
+  - By using two queues, the sending order of Binary type and Text Type is guaranteed separately.
+- `BinaryOnlySender`
+  - Use one queue to send only binary type messages. It is less allocations than SingleQueueSender.
+- `TextOnlySender`
+  - Use one queue to send only text type messages. It is less allocations than SingleQueueSender.
+
+The above class can inject a Channel in its constructor. By default Channel.CreateUnbounded is used, but if you want to limit the capacity you can use Channel.CreateBounded. At that time, it is recommended to set `SingleReader = true, SingleWriter = false` in the options of `Channel` class.
+
+```csharp
+var client = new WebSocketClient(new Uri(uri), _logger, new DoubleQueueSender());
+
+var channel = Channel.CreateBounded<SentMessage>(new BoundedChannelOptions(5) { SingleReader = true, SingleWriter = false });
+var client = new WebSocketClient(new Uri(uri), _logger, new SingleQueueSender(channel));
+```
+
+# WebSocket options
 If you want to make detailed settings for WebSocket, use the factory method.
 ```csharp
 var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
@@ -116,14 +165,8 @@ var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
 
 var webSocketClient = new WebSocketClient(url, factory);
 ```
-The default received memory pool is set to 64KB.
-if lack of memory, memory pool is automatically increase so allocation occur.
-If it is known that a large size will come, it is advantageous to set a large memory pool in the following constructor.
-```csharp
-public WebSocketClient(Uri url, int initialMemorySize, ILogger logger = null, Func<ClientWebSocket> clientFactory = null)
-```
 
-## Notice
+# Notice
 WebSocketClient issues all events from thread pool. Therefore, you cannot operate the components on Unity in Subscribe directly. So please handle from the main thread using an operator such as 'ObserveOnMainThread' as follows.
 ```csharp
 //error will occur.
@@ -150,4 +193,4 @@ $ dotnet run
 ```
 
 ## Web(bonus)
-open ```UniWebSocket/Sample/Web/WebSocketChat.html```
+open [```Sample/Web/WebSocketChat.html```](Sample/Web/WebSocketChat.html)

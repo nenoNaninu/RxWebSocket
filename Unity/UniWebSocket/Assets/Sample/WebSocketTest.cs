@@ -24,19 +24,26 @@ namespace RxWebSocket.Sample
             //         KeepAliveInterval = TimeSpan.FromSeconds(5),
             //     }
             // });
-
-//            var url = new Uri("ws://echo.websocket.org");
+            var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
+            {
+                Options =
+                {
+                    KeepAliveInterval = TimeSpan.FromSeconds(5),
+                    //Proxy = ...
+                    //ClientCertificates = ...
+                }
+            });
+            //            var url = new Uri("ws://echo.websocket.org");
             var url = new Uri("wss://echo.websocket.org/");
 
             _client = new WebSocketClient(url, new UnityConsoleLogger());
 
             _client.Send("いやっほーーーー");
 
-            _client.MessageReceived
+            _client.TextMessageReceived
                 .ObserveOn(Scheduler.MainThread)
                 .Subscribe(msg =>
                 {
-                    Debug.Log(msg.MessageType);
                     Debug.Log($"Message received: {msg}");
                     _transform.position += Vector3.up * 10;
                 })
