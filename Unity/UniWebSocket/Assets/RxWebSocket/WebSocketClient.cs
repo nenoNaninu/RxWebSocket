@@ -38,7 +38,7 @@ namespace RxWebSocket
         private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
         private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
 
-        private readonly IWebSocketMessageSender _webSocketMessageSender;
+        private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
 
         private WebSocket _socket;
 

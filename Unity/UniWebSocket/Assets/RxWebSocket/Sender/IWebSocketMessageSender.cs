@@ -7,7 +7,7 @@ using RxWebSocket.Logging;
 
 namespace RxWebSocket
 {
-    internal interface IWebSocketMessageSender : IDisposable
+    internal interface IWebSocketMessageSenderCore : IDisposable
     {
         Encoding MessageEncoding { get; }
 

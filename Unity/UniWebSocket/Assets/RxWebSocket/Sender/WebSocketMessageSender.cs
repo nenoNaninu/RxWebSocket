@@ -2,6 +2,6 @@
 {
     public abstract class WebSocketMessageSender
     {
-        internal abstract IWebSocketMessageSender AsCore();
+        internal abstract IWebSocketMessageSenderCore AsCore();
     }
 }

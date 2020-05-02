@@ -19,7 +19,7 @@ using UniRx;
 
 namespace RxWebSocket
 {
-    internal class DoubleQueueSenderCore : IWebSocketMessageSender
+    internal class DoubleQueueSenderCore : IWebSocketMessageSenderCore
     {
         private readonly Channel<ArraySegment<byte>> _binaryMessageQueue;
         private readonly ChannelReader<ArraySegment<byte>> _binaryMessageQueueReader;

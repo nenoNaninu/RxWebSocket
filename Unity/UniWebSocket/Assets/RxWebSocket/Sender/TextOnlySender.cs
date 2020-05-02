@@ -5,13 +5,13 @@ namespace RxWebSocket
 {
     public class TextOnlySender: WebSocketMessageSender
     {
-        private readonly IWebSocketMessageSender _core;
+        private readonly IWebSocketMessageSenderCore _core;
 
         public TextOnlySender(Channel<ArraySegment<byte>> sentMessageQueue = null)
         {
             _core = new TextOnlySenderCore(sentMessageQueue);
         }
-        internal override IWebSocketMessageSender AsCore()
+        internal override IWebSocketMessageSenderCore AsCore()
         {
             return _core;
         }
