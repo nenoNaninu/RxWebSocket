@@ -33,7 +33,7 @@ Various settings can be made in the constructor.
   - If you know that you will receive large messages, a larger initial memory allocation will reduce wasted allocation.
 - [Message sending method setting](#sending-options).
   - Internally, System.Threading.Channels is run in the background to send messages. 
-  - You can choose various sending methods by using the [these classes](#sending-options).
+  - You can choose various sending methods by using [these classes](#sending-options).
 - [WebSocket Options(KeepAliveInterval, Proxy,...)](#websocket-options)
   - If you want to make detailed settings for WebSocket, use the factory method. This is because the `class ClientWebSocketOptions`  constructor is interlnal. You can set [like this](#websocket-options).
 
