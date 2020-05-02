@@ -33,7 +33,7 @@ namespace RxWebSocket
 
         public Encoding MessageEncoding { get; } = Encoding.UTF8;
         public bool IsDisposed { get; private set; }
-        public string Name { get; set; } = "CLIENT";
+        public string Name { get; private set; } = "CLIENT";
 
         public bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
 
@@ -47,13 +47,15 @@ namespace RxWebSocket
         }
 
         public void SetInternal(
-            CancellationToken sendingCancellationToken, 
+            CancellationToken sendingCancellationToken,
             CancellationToken waitQueueCancellationToken,
-            ILogger logger)
+            ILogger logger,
+            string name)
         {
             _sendingCancellationToken = sendingCancellationToken;
             _waitQueueCancellationToken = waitQueueCancellationToken;
             _logger = logger;
+            Name = name;
         }
 
         public void SetSocket(WebSocket webSocket)

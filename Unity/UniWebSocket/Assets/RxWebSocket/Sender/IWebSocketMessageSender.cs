@@ -11,14 +11,15 @@ namespace RxWebSocket
     {
         Encoding MessageEncoding { get; }
 
-        string Name { get; set; }
+        string Name { get; }
 
         void SendMessageFromQueue();
 
         void SetInternal(
             CancellationToken sendingCancellationToken,
             CancellationToken waitQueueCancellationToken,
-            ILogger logger);
+            ILogger logger,
+            string name);
 
         IObservable<WebSocketExceptionDetail> ExceptionHappenedInSending { get; }
 

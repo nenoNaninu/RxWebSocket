@@ -134,7 +134,7 @@ namespace RxWebSocket
             _connectionFactory = MakeConnectionFactory(clientFactory);
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
-            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
+            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger, Name);
 
             _webSocketMessageSender
                 .ExceptionHappenedInSending
@@ -158,8 +158,8 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
-            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger);
-
+            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger, Name);
+            
             _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
