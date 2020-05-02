@@ -44,7 +44,7 @@ namespace RxWebSocket
 
         public Uri Url { get; }
 
-        private string _name;
+        private string _name = "CLIENT";
         /// <summary>
         /// For logging purpose.
         /// </summary>

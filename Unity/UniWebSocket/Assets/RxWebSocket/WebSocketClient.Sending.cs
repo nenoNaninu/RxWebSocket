@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using RxWebSocket.Exceptions;
-using RxWebSocket.Validations;
 
 namespace RxWebSocket
 {
