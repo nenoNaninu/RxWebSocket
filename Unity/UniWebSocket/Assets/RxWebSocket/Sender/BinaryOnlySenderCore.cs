@@ -99,7 +99,6 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-
                 if (messageType != WebSocketMessageType.Binary)
                 {
                     throw new WebSocketBadInputException($"In BinaryOnlySender, the message type must be binary.");
@@ -116,7 +115,6 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-
                 if (messageType != WebSocketMessageType.Binary)
                 {
                     throw new WebSocketBadInputException($"In BinaryOnlySender, the message type must be binary.");
@@ -153,7 +151,6 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-
                 if (messageType != WebSocketMessageType.Binary)
                 {
                     throw new WebSocketBadInputException($"In BinaryOnlySender, the message type must be binary.");
@@ -179,7 +176,6 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-
                 if (messageType != WebSocketMessageType.Binary)
                 {
                     throw new WebSocketBadInputException($"In BinaryOnlySender, the message type must be binary.");

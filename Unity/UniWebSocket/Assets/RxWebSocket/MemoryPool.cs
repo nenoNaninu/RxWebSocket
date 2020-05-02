@@ -23,7 +23,7 @@ namespace RxWebSocket
                     return;
                 }
 
-                _logger?.Log($"[MEMORY POOL] resize pool : {_memoryPool.Length} bytes to {_memoryPool.Length * 2} bytes");
+                _logger?.Log($"[WEBSOCKET MEMORY POOL] resize pool : {_memoryPool.Length} bytes to {_memoryPool.Length * 2} bytes");
 
                 var newArrayPool = new byte[_memoryPool.Length * 2];
                 Buffer.BlockCopy(_memoryPool, 0, newArrayPool, 0, _offset);

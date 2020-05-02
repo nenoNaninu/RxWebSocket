@@ -45,6 +45,7 @@ namespace RxWebSocket
         public Uri Url { get; }
 
         private string _name = "CLIENT";
+
         /// <summary>
         /// For logging purpose.
         /// </summary>
@@ -129,22 +130,11 @@ namespace RxWebSocket
                 .Subscribe(_exceptionSubject.OnNext);
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="logger"></param>
-        /// <param name="connectedSocket">Already connected socket.</param>
-        /// <param name="messageSender"></param>
         public WebSocketClient(WebSocket connectedSocket, ILogger logger = null, WebSocketMessageSender messageSender = null)
             :this(connectedSocket, logger, ReceivingMemoryConfig.Default, messageSender)
         {
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="receivingMemoryConfig"></param>
-        /// <param name="logger"></param>
-        /// <param name="connectedSocket">Already connected socket.</param>
-        /// <param name="messageSender"></param>
         public WebSocketClient(WebSocket connectedSocket, ILogger logger, ReceivingMemoryConfig receivingMemoryConfig, WebSocketMessageSender messageSender = null)
         {
             Url = null;
@@ -168,10 +158,6 @@ namespace RxWebSocket
         public bool IsClosed => _socket != null && _socket.State == WebSocketState.Closed;
 
         public WebSocketState WebSocketState => _socket?.State ?? WebSocketState.None;
-
-        public IObservable<ResponseMessage> MessageReceived => _binaryMessageReceivedSubject
-            .Select(ResponseMessage.BinaryMessage)
-            .Merge(_textMessageReceivedSubject.Select(ResponseMessage.TextMessage));
 
         public IObservable<byte[]> BinaryMessageReceived => _binaryMessageReceivedSubject.AsObservable();
 
@@ -273,29 +259,16 @@ namespace RxWebSocket
         }
 
         /// <summary>
-        /// Close WebSocket
+        /// close websocket connection.
         /// </summary>
-        /// <param name="status"></param>
-        /// <param name="statusDescription"></param>
-        /// <returns>
-        /// true is normal.
-        /// If false, there is a problem.
-        /// This function is equivalent to CloseAsync(status, statusDescription, true)
-        /// </returns>
         public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
         }
 
         /// <summary>
-        /// Close WebSocket
+        /// close websocket connection.
         /// </summary>
-        /// <param name="status"></param>
-        /// <param name="statusDescription"></param>
-        /// <param name="dispose"></param>
-        /// <returns>true is normal.
-        /// If false, there is a problem.
-        /// </returns>
         public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
             // prevent sending multiple disconnect requests.
