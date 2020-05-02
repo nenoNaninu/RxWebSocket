@@ -26,7 +26,7 @@ namespace RxWebSocket
         /// <summary>
         /// For logging purpose.
         /// </summary>
-        string Name { get; set; }
+        string Name { get; }
 
         bool IsOpen { get; }
 
@@ -44,7 +44,7 @@ namespace RxWebSocket
         /// <summary>
         /// Default is UTF8
         /// </summary>
-        Encoding MessageEncoding { get; set; }
+        Encoding MessageEncoding { get; }
 
         Task WaitUntilClose { get; }
 
