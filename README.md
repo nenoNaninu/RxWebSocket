@@ -134,6 +134,7 @@ You can choose various sending methods by using the following class.
 
 - `SingleQueueSender`
   - By using a single queue, the sending order of both Binary type and Text Type is guaranteed.
+  - It is default.
 - `DoubleQueueSender`
   - By using two queues, the sending order of Binary type and Text Type is guaranteed separately.
 - `BinaryOnlySender`
@@ -166,7 +167,7 @@ var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
 var webSocketClient = new WebSocketClient(url, factory);
 ```
 
-# Notice
+# Notice for Unity
 WebSocketClient issues all events from thread pool. Therefore, you cannot operate the components on Unity in Subscribe directly. So please handle from the main thread using an operator such as 'ObserveOnMainThread' as follows.
 ```csharp
 //error will occur.
