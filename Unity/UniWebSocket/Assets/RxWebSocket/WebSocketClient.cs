@@ -3,7 +3,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using RxWebSocket.Exceptions;
 using RxWebSocket.Threading;
 using RxWebSocket.Validations;
 using RxWebSocket.Logging;
@@ -41,6 +40,7 @@ namespace RxWebSocket
         private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
 
         private WebSocket _socket;
+        private bool _isAlreadyReceiving;
 
         public Uri Url { get; }
 
@@ -98,18 +98,14 @@ namespace RxWebSocket
             string name = "CLIENT",
             Encoding messageEncoding = null)
         {
-            if (connectedSocket == null)
-            {
-                throw new ArgumentNullException(nameof(connectedSocket));
-            }
+            _socket = connectedSocket ?? throw new ArgumentNullException(nameof(connectedSocket));
 
             Url = null;
-            Name = name;
-            MessageEncoding = messageEncoding ?? Encoding.UTF8;
-
-            _logger = logger;
-            _socket = connectedSocket;
             _clientFactory = null;
+            
+            Name = name;
+            _logger = logger;
+            MessageEncoding = messageEncoding ?? Encoding.UTF8;
 
             receivingMemoryConfig = receivingMemoryConfig ?? ReceivingMemoryConfig.Default;
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
@@ -148,9 +144,9 @@ namespace RxWebSocket
         {
             using (await _openLocker.LockAsync().ConfigureAwait(false))
             {
-                if (IsOpen)
+                if (_isAlreadyReceiving)
                 {
-                    _logger?.Warn(FormatLogMessage("WebSocketClient is already open."));
+                    _logger?.Warn(FormatLogMessage("WebSocketClient is already open and receiving"));
                     return;
                 }
 
@@ -172,7 +168,7 @@ namespace RxWebSocket
         {
             try
             {
-                if (_socket != null)
+                if (_socket == null)
                 {
                     _logger?.Log(FormatLogMessage("Connecting..."));
                     var client = _clientFactory();
@@ -183,7 +179,9 @@ namespace RxWebSocket
                 _webSocketMessageSender.SetSocket(_socket);
 
                 _logger?.Log(FormatLogMessage("Start Listening..."));
+
                 WaitUntilClose = Listen(_socket, token);
+                _isAlreadyReceiving = true;
                 LastReceivedTime = DateTime.UtcNow;
             }
             catch (Exception e)
