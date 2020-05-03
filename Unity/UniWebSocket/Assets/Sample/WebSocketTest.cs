@@ -36,7 +36,7 @@ namespace RxWebSocket.Sample
             //            var url = new Uri("ws://echo.websocket.org");
             var url = new Uri("wss://echo.websocket.org/");
 
-            _client = new WebSocketClient(url, new UnityConsoleLogger());
+            _client = new WebSocketClient(url, logger: new UnityConsoleLogger());
 
             _client.Send("いやっほーーーー");
 

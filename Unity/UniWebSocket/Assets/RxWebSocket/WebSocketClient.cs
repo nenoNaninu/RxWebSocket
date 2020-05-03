@@ -24,7 +24,7 @@ namespace RxWebSocket
 
         private readonly MemoryPool _memoryPool;
 
-        private readonly Func<Uri, CancellationToken, Task<WebSocket>> _connectionFactory;
+        private readonly Func<ClientWebSocket> _clientFactory;
 
         private readonly AsyncLock _openLocker = new AsyncLock();
         private readonly AsyncLock _closeLocker = new AsyncLock();
@@ -80,8 +80,7 @@ namespace RxWebSocket
             receivingMemoryConfig = receivingMemoryConfig ?? ReceivingMemoryConfig.Default; //cannot use =?? in unity
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
-            clientFactory = clientFactory ?? MakeDefaultClientFactory();
-            _connectionFactory = MakeConnectionFactory(clientFactory);
+            _clientFactory = clientFactory ?? MakeDefaultClientFactory();
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger, Name);
@@ -109,7 +108,8 @@ namespace RxWebSocket
             MessageEncoding = messageEncoding ?? Encoding.UTF8;
 
             _logger = logger;
-            _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
+            _socket = connectedSocket;
+            _clientFactory = null;
 
             receivingMemoryConfig = receivingMemoryConfig ?? ReceivingMemoryConfig.Default;
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
@@ -172,9 +172,13 @@ namespace RxWebSocket
         {
             try
             {
-                _logger?.Log(FormatLogMessage("Connecting..."));
-
-                _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
+                if (_socket != null)
+                {
+                    _logger?.Log(FormatLogMessage("Connecting..."));
+                    var client = _clientFactory();
+                    await client.ConnectAsync(uri, token).ConfigureAwait(false);
+                    _socket = client;
+                }
 
                 _webSocketMessageSender.SetSocket(_socket);
 
@@ -279,18 +283,8 @@ namespace RxWebSocket
         {
             return () => new ClientWebSocket
             {
-                Options = { KeepAliveInterval = TimeSpan.FromSeconds(10) }
+                Options = { KeepAliveInterval = TimeSpan.FromSeconds(5) }
             };
-        }
-
-        private static Func<Uri, CancellationToken, Task<WebSocket>> MakeConnectionFactory(Func<ClientWebSocket> clientFactory)
-        {
-            return (async (uri, token) =>
-            {
-                var client = clientFactory();
-                await client.ConnectAsync(uri, token).ConfigureAwait(false);
-                return client;
-            });
         }
 
         private async Task Listen(WebSocket client, CancellationToken token)
