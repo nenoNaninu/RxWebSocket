@@ -58,79 +58,29 @@ namespace RxWebSocket
         public Task WaitUntilClose { get; private set; }
         #endregion
 
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="messageSender"></param>
-        /// <param name="name">For logging purpose.</param>
-        /// <param name="messageEncoding"></param>
-        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
         public WebSocketClient(
-            Uri url, 
-            WebSocketMessageSender messageSender = null, 
-            string name = "CLIENT", 
-            Encoding messageEncoding= null, 
-            Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, messageSender, null, name, messageEncoding, clientFactory)
-        {
-        }
-
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="logger"></param>
-        /// <param name="messageSender"></param>
-        /// <param name="name">For logging purpose.</param>
-        /// <param name="messageEncoding"></param>
-        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(
-            Uri url, 
-            ILogger logger, 
-            WebSocketMessageSender messageSender = null, 
-            string name = "CLIENT", 
-            Encoding messageEncoding = null, 
-            Func<ClientWebSocket> clientFactory = null)
-            : this(url, ReceivingMemoryConfig.Default, messageSender, logger, name, messageEncoding, clientFactory)
-        {
-        }
-
-        /// <param name="url">Target websocket url (wss://)</param>
-        /// <param name="receivingMemoryConfig"></param>
-        /// <param name="logger"></param>
-        /// <param name="messageSender"></param>
-        /// <param name="name">For logging purpose.</param>
-        /// <param name="messageEncoding"></param>
-        /// <param name="clientFactory">Optional factory for native ClientWebSocket, use it whenever you need some custom features (proxy, settings, etc)</param>
-        public WebSocketClient(
-            Uri url, 
-            ReceivingMemoryConfig receivingMemoryConfig, 
-            ILogger logger = null, 
-            WebSocketMessageSender messageSender = null, 
+            Uri url,
+            WebSocketMessageSender messageSender = null,
+            ReceivingMemoryConfig receivingMemoryConfig = null,
+            ILogger logger = null,
             string name = "CLIENT",
             Encoding messageEncoding = null,
             Func<ClientWebSocket> clientFactory = null)
-            : this(url, receivingMemoryConfig, messageSender, logger, name, messageEncoding,clientFactory)
-        {
-        }
-
-        public WebSocketClient(
-            Uri url,
-            ReceivingMemoryConfig receivingMemoryConfig,
-            WebSocketMessageSender messageSender,
-            ILogger logger,
-            string name,
-            Encoding messageEncoding,
-            Func<ClientWebSocket> clientFactory)
         {
             if (!ValidationUtils.ValidateInput(url))
             {
-                throw new WebSocketBadInputException($"url is null. Please correct it.");
+                throw new ArgumentNullException(nameof(url));
             }
 
             Url = url;
             Name = name;
             MessageEncoding = messageEncoding ?? Encoding.UTF8;
-
             _logger = logger;
+
+            receivingMemoryConfig = receivingMemoryConfig ?? ReceivingMemoryConfig.Default; //cannot use =?? in unity
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
-            clientFactory = clientFactory ?? MakeDefaultClientFactory(); //cannot use =?? in unity
+            clientFactory = clientFactory ?? MakeDefaultClientFactory();
             _connectionFactory = MakeConnectionFactory(clientFactory);
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
@@ -141,13 +91,19 @@ namespace RxWebSocket
                 .Subscribe(_exceptionSubject.OnNext);
         }
 
-        public WebSocketClient(WebSocket connectedSocket, ILogger logger = null, WebSocketMessageSender messageSender = null, string name = "CLIENT", Encoding messageEncoding = null)
-            : this(connectedSocket, logger, ReceivingMemoryConfig.Default, messageSender)
+        public WebSocketClient(
+            WebSocket connectedSocket,
+            WebSocketMessageSender messageSender = null,
+            ReceivingMemoryConfig receivingMemoryConfig = null,
+            ILogger logger = null,
+            string name = "CLIENT",
+            Encoding messageEncoding = null)
         {
-        }
+            if (connectedSocket == null)
+            {
+                throw new ArgumentNullException(nameof(connectedSocket));
+            }
 
-        public WebSocketClient(WebSocket connectedSocket, ILogger logger, ReceivingMemoryConfig receivingMemoryConfig, WebSocketMessageSender messageSender = null, string name= "CLIENT", Encoding messageEncoding = null)
-        {
             Url = null;
             Name = name;
             MessageEncoding = messageEncoding ?? Encoding.UTF8;
@@ -155,11 +111,12 @@ namespace RxWebSocket
             _logger = logger;
             _connectionFactory = (uri, token) => Task.FromResult(connectedSocket);
 
+            receivingMemoryConfig = receivingMemoryConfig ?? ReceivingMemoryConfig.Default;
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger, Name);
-            
+
             _webSocketMessageSender
                 .ExceptionHappenedInSending
                 .Subscribe(_exceptionSubject.OnNext);
@@ -216,7 +173,7 @@ namespace RxWebSocket
             try
             {
                 _logger?.Log(FormatLogMessage("Connecting..."));
-                
+
                 _socket = await _connectionFactory(uri, token).ConfigureAwait(false);
 
                 _webSocketMessageSender.SetSocket(_socket);

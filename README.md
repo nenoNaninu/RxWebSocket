@@ -41,10 +41,10 @@ Various settings can be made in the constructor.
 ## Client Code
 ```csharp
 #if Unity
-var webSocketClient = new WebSocketClient(new Uri("wss://echo.websocket.org/"), new UnityConsoleLogger());
+var webSocketClient = new WebSocketClient(new Uri("wss://echo.websocket.org/"), logger: new UnityConsoleLogger());
 #else 
 Microsoft.Extensions.Logging.ILogger<T> logger;
-var webSocketClient = new WebSocketClient(new Uri("wss://echo.websocket.org/"), logger.AsWebSocketLogger());
+var webSocketClient = new WebSocketClient(new Uri("wss://echo.websocket.org/"), logger: logger.AsWebSocketLogger());
 #endif
 
 //IObservable<byte[]>
@@ -106,7 +106,7 @@ if (!context.WebSockets.IsWebSocketRequest) return;
 var socket = await context.WebSockets.AcceptWebSocketAsync();
 
 //You can set the connected socket in the constructor.
-using var webSocketClient = new WebSocketClient(socket, logger.AsWebSocketLogger());
+using var webSocketClient = new WebSocketClient(socket, logger: logger.AsWebSocketLogger());
 
 // subscribe setting...
 
@@ -145,10 +145,10 @@ You can choose various sending methods by using the following class.
 The above class can inject a Channel in its constructor. By default Channel.CreateUnbounded is used, but if you want to limit the capacity you can use Channel.CreateBounded. At that time, it is recommended to set `SingleReader = true, SingleWriter = false` in the options of `Channel` class.
 
 ```csharp
-var client = new WebSocketClient(new Uri(uri), _logger, new DoubleQueueSender());
+var client = new WebSocketClient(new Uri(uri), new DoubleQueueSender());
 
 var channel = Channel.CreateBounded<SentMessage>(new BoundedChannelOptions(5) { SingleReader = true, SingleWriter = false });
-var client = new WebSocketClient(new Uri(uri), _logger, new SingleQueueSender(channel));
+var client = new WebSocketClient(new Uri(uri), new SingleQueueSender(channel));
 ```
 
 # WebSocket options
@@ -164,7 +164,7 @@ var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
     }
 });
 
-var webSocketClient = new WebSocketClient(url, factory);
+var webSocketClient = new WebSocketClient(url, clientFactory: factory);
 ```
 
 # Notice for Unity

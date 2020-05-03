@@ -350,10 +350,13 @@ namespace RxWebSocket
 
         public void Dispose()
         {
-            IsDisposed = true;
-            _binaryMessageQueueWriter.Complete();
-            _textMessageQueueWriter.Complete();
-            _exceptionSubject.Dispose();
+            if (!IsDisposed)
+            {
+                IsDisposed = true;
+                _binaryMessageQueueWriter.Complete();
+                _textMessageQueueWriter.Complete();
+                _exceptionSubject.Dispose();
+            }
         }
     }
 }

@@ -258,9 +258,12 @@ namespace RxWebSocket
 
         public void Dispose()
         {
-            IsDisposed = true;
-            _sentMessageQueueWriter.Complete();
-            _exceptionSubject.Dispose();
+            if (!IsDisposed)
+            {
+                IsDisposed = true;
+                _sentMessageQueueWriter.Complete();
+                _exceptionSubject.Dispose();
+            }
         }
 
         private string FormatLogMessage(string msg)
