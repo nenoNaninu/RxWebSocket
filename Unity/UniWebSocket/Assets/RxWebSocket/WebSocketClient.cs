@@ -34,13 +34,11 @@ namespace RxWebSocket
         private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
 
-        private readonly CancellationTokenSource _cancellationCurrentJobs = new CancellationTokenSource();
-        private readonly CancellationTokenSource _cancellationAllJobs = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancellationSocketJobs = new CancellationTokenSource();
 
         private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
 
         private WebSocket _socket;
-        private bool _isAlreadyReceiving;
 
         public Uri Url { get; }
 
@@ -55,6 +53,7 @@ namespace RxWebSocket
 
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
+        public bool IsListening { get; private set; }
         public Task WaitUntilClose { get; private set; }
         #endregion
 
@@ -83,7 +82,7 @@ namespace RxWebSocket
             _clientFactory = clientFactory ?? MakeDefaultClientFactory();
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
-            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger, Name);
+            _webSocketMessageSender.SetLoggingConfig(logger, Name);
 
             _webSocketMessageSender
                 .ExceptionHappenedInSending
@@ -102,7 +101,7 @@ namespace RxWebSocket
 
             Url = null;
             _clientFactory = null;
-            
+
             Name = name;
             _logger = logger;
             MessageEncoding = messageEncoding ?? Encoding.UTF8;
@@ -111,7 +110,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
 
             _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
-            _webSocketMessageSender.SetInternal(_cancellationCurrentJobs.Token, _cancellationAllJobs.Token, logger, Name);
+            _webSocketMessageSender.SetLoggingConfig(logger, Name);
 
             _webSocketMessageSender
                 .ExceptionHappenedInSending
@@ -144,7 +143,7 @@ namespace RxWebSocket
         {
             using (await _openLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_isAlreadyReceiving)
+                if (IsListening)
                 {
                     _logger?.Warn(FormatLogMessage("WebSocketClient is already open and receiving"));
                     return;
@@ -156,7 +155,7 @@ namespace RxWebSocket
                     throw new ObjectDisposedException("WebSocketClient is already disposed.");
                 }
 
-                var connectionTask = ConnectAndStartListeningInternal(Url, _cancellationCurrentJobs.Token);
+                var connectionTask = ConnectAndStartListeningInternal();
 
                 StartBackgroundThreadForSendingMessage();
 
@@ -164,7 +163,7 @@ namespace RxWebSocket
             }
         }
 
-        private async Task ConnectAndStartListeningInternal(Uri uri, CancellationToken token)
+        private async Task ConnectAndStartListeningInternal()
         {
             try
             {
@@ -172,7 +171,7 @@ namespace RxWebSocket
                 {
                     _logger?.Log(FormatLogMessage("Connecting..."));
                     var client = _clientFactory();
-                    await client.ConnectAsync(uri, token).ConfigureAwait(false);
+                    await client.ConnectAsync(Url, _cancellationSocketJobs.Token).ConfigureAwait(false);
                     _socket = client;
                 }
 
@@ -180,8 +179,8 @@ namespace RxWebSocket
 
                 _logger?.Log(FormatLogMessage("Start Listening..."));
 
-                WaitUntilClose = Listen(_socket, token);
-                _isAlreadyReceiving = true;
+                WaitUntilClose = Listen();
+                IsListening = true;
                 LastReceivedTime = DateTime.UtcNow;
             }
             catch (Exception e)
@@ -203,9 +202,6 @@ namespace RxWebSocket
 
             try
             {
-                _cancellationAllJobs.Cancel();
-                _cancellationCurrentJobs.Cancel();
-
                 if (!IsClosed)
                 {
                     _socket?.Abort();
@@ -213,8 +209,7 @@ namespace RxWebSocket
 
                 _socket?.Dispose();
 
-                _cancellationAllJobs.Dispose();
-                _cancellationCurrentJobs.Dispose();
+                _cancellationSocketJobs.Dispose();
 
                 _webSocketMessageSender.Dispose();
 
@@ -261,8 +256,13 @@ namespace RxWebSocket
 
                 try
                 {
+                    await _webSocketMessageSender.StopAsync();
+
                     // await until the connection closed.
-                    await _socket.CloseAsync(status, statusDescription, _cancellationCurrentJobs.Token).ConfigureAwait(false);
+                    await _socket.CloseAsync(status, statusDescription, _cancellationSocketJobs.Token).ConfigureAwait(false);
+                    IsListening = false;
+
+                    _cancellationSocketJobs.Cancel();
 
                     if (dispose)
                     {
@@ -277,15 +277,7 @@ namespace RxWebSocket
             }
         }
 
-        private static Func<ClientWebSocket> MakeDefaultClientFactory()
-        {
-            return () => new ClientWebSocket
-            {
-                Options = { KeepAliveInterval = TimeSpan.FromSeconds(5) }
-            };
-        }
-
-        private async Task Listen(WebSocket client, CancellationToken token)
+        private async Task Listen()
         {
             try
             {
@@ -297,7 +289,7 @@ namespace RxWebSocket
                     WebSocketReceiveResult result;
                     do
                     {
-                        result = await client.ReceiveAsync(memorySegment, token).ConfigureAwait(false);
+                        result = await _socket.ReceiveAsync(memorySegment, _cancellationSocketJobs.Token).ConfigureAwait(false);
 
                         if (result.MessageType != WebSocketMessageType.Close)
                         {
@@ -344,7 +336,7 @@ namespace RxWebSocket
                         return;
                     }
                 }
-                while (client.State == WebSocketState.Open && !token.IsCancellationRequested);
+                while (_socket.State == WebSocketState.Open && !_cancellationSocketJobs.IsCancellationRequested);
             }
             catch (TaskCanceledException)
             {
@@ -371,6 +363,14 @@ namespace RxWebSocket
         private string FormatLogMessage(string msg)
         {
             return $"[WEBSOCKET {Name}] {msg}";
+        }
+
+        private static Func<ClientWebSocket> MakeDefaultClientFactory()
+        {
+            return () => new ClientWebSocket
+            {
+                Options = { KeepAliveInterval = TimeSpan.FromSeconds(5) }
+            };
         }
     }
 }

@@ -3,7 +3,6 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using RxWebSocket;
 using RxWebSocket.Logging;
 using UniRx;
 using Utf8Json;
@@ -19,6 +18,9 @@ namespace RxWebSocket.Sample
         public IObservable<ChatMessage> OnReceived => _receivedSubject.AsObservable();
         public IObservable<CloseMessage> OnError => _closeSubject.AsObservable();
 
+        private CompositeDisposable _disposables;
+        private bool _close = false;
+
         public ChatClient(ILogger logger = null)
         {
             _logger = logger;
@@ -26,16 +28,21 @@ namespace RxWebSocket.Sample
 
         public async Task Connect(string name, string uri)
         {
+            _close = false;
             var channel = Channel.CreateBounded<SentMessage>(new BoundedChannelOptions(5) { SingleReader = true, SingleWriter = false });
-            _webSocketClient = new WebSocketClient(new Uri(uri), logger: _logger, messageSender: new SingleQueueSender(channel), name: name);
+            _webSocketClient = new WebSocketClient(new Uri(uri), logger: _logger, messageSender: new SingleQueueSender(), name: name);
+
+            _disposables = new CompositeDisposable();
 
             _webSocketClient.BinaryMessageReceived
                 .Select(bin => JsonSerializer.Deserialize<ChatMessage>(bin))
-                .Subscribe(x => _receivedSubject.OnNext(x));
+                .Subscribe(x => _receivedSubject.OnNext(x))
+                .AddTo(_disposables);
 
             _webSocketClient.CloseMessageReceived
                 .Do(x => _logger?.Log($"CloseMessageReceived.Do()...{x}"))
-                .Subscribe(x => _closeSubject.OnNext(x));
+                .Subscribe(x => _closeSubject.OnNext(x))
+                .AddTo(_disposables);
 
             _webSocketClient.ExceptionHappened
                 .Subscribe(x =>
@@ -43,10 +50,22 @@ namespace RxWebSocket.Sample
                     _logger?.Log("exception stream...");
                     _logger?.Log(x.ErrorType.ToString());
                     _logger?.Log(x.Exception.ToString());
-                });
+                })
+                .AddTo(_disposables);
 
             await _webSocketClient.ConnectAndStartListening();
             _webSocketClient.Send(Encoding.UTF8.GetBytes(name));
+
+            // for debug code.
+            //_ = Task.Run(async () =>
+            //{
+            //    int i = 0;
+            //    while (!_close)
+            //    {
+            //        this.Send("continuous sending test." + ++i);
+            //        await Task.Delay(TimeSpan.FromMilliseconds(1));
+            //    }
+            //});
         }
 
         public async Task Close()
@@ -54,9 +73,11 @@ namespace RxWebSocket.Sample
             if (_webSocketClient != null)
             {
                 _logger?.Log("ChatClient will be closed!!");
-                var closeTask = _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal");
+                var closeTask = _webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "normal",false);
                 _logger?.Log($"ChatClient: {_webSocketClient.WebSocketState.ToString()}");
                 await closeTask;
+                _disposables.Dispose();
+                _close = true;
             }
         }
 

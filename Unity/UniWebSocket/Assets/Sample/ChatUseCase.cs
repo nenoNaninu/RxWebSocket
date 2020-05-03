@@ -11,6 +11,7 @@ namespace RxWebSocket.Sample
         {
             _presenter = presenter;
             _chatClient = chatClient;
+            
 
             _presenter.OnConnectButtonClick
                 .Where(x => !string.IsNullOrEmpty(x.Name) && !string.IsNullOrEmpty(x.Uri))

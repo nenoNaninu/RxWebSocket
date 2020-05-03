@@ -13,17 +13,15 @@ namespace RxWebSocket
 
         string Name { get; }
 
-        void SendMessageFromQueue();
-
-        void SetInternal(
-            CancellationToken sendingCancellationToken,
-            CancellationToken waitQueueCancellationToken,
-            ILogger logger,
-            string name);
-
         IObservable<WebSocketExceptionDetail> ExceptionHappenedInSending { get; }
 
+        void SendMessageFromQueue();
+
+        void SetLoggingConfig(ILogger logger, string name);
+
         void SetSocket(WebSocket webSocket);
+
+        Task StopAsync();
 
         bool Send(string message);
 

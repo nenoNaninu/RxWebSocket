@@ -31,10 +31,11 @@ namespace RxWebSocket
 
         private readonly AsyncLock _sendLocker = new AsyncLock();
         private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
+        private readonly CancellationTokenSource _stopCancellationTokenSource = new CancellationTokenSource();
 
         private WebSocket _socket;
-        private CancellationToken _sendingCancellationToken, _waitQueueCancellationToken;
         private ILogger _logger;
+        private bool _stop;
 
         public Encoding MessageEncoding { get; } = Encoding.UTF8;
         public bool IsDisposed { get; private set; }
@@ -57,14 +58,8 @@ namespace RxWebSocket
             _textMessageQueueWriter = _textMessageQueue.Writer;
         }
 
-        public void SetInternal(
-            CancellationToken sendingCancellationToken,
-            CancellationToken waitQueueCancellationToken,
-            ILogger logger,
-            string name)
+        public void SetLoggingConfig(ILogger logger, string name)
         {
-            _sendingCancellationToken = sendingCancellationToken;
-            _waitQueueCancellationToken = waitQueueCancellationToken;
             _logger = logger;
             Name = name;
         }
@@ -74,10 +69,19 @@ namespace RxWebSocket
             _socket = webSocket;
         }
 
+        public async Task StopAsync()
+        {
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
+            {
+                _stop = true;
+                _stopCancellationTokenSource.Cancel();
+            }
+        }
+
         public void SendMessageFromQueue()
         {
-            _ = Task.Factory.StartNew(_ => SendBinaryMessageFromQueue(), TaskCreationOptions.LongRunning, _waitQueueCancellationToken);
-            _ = Task.Factory.StartNew(_ => SendTextMessageFromQueue(), TaskCreationOptions.LongRunning, _waitQueueCancellationToken);
+            _ = Task.Factory.StartNew(_ => SendBinaryMessageFromQueue(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
+            _ = Task.Factory.StartNew(_ => SendTextMessageFromQueue(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
         }
 
         public bool Send(string message)
@@ -227,9 +231,9 @@ namespace RxWebSocket
         {
             try
             {
-                while (await _binaryMessageQueueReader.WaitToReadAsync(_waitQueueCancellationToken).ConfigureAwait(false))
+                while (await _binaryMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (_binaryMessageQueueReader.TryRead(out var message))
+                    while (!_stop && _binaryMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -253,7 +257,7 @@ namespace RxWebSocket
             }
             catch (Exception e)
             {
-                if (_waitQueueCancellationToken.IsCancellationRequested || IsDisposed)
+                if (_stopCancellationTokenSource.IsCancellationRequested || IsDisposed)
                 {
                     // disposing/canceling, do nothing and exit
                     return;
@@ -268,9 +272,9 @@ namespace RxWebSocket
         {
             try
             {
-                while (await _textMessageQueueReader.WaitToReadAsync(_waitQueueCancellationToken).ConfigureAwait(false))
+                while (await _textMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (_textMessageQueueReader.TryRead(out var message))
+                    while (!_stop && _textMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -294,7 +298,7 @@ namespace RxWebSocket
             }
             catch (Exception e)
             {
-                if (_waitQueueCancellationToken.IsCancellationRequested || IsDisposed)
+                if (_stopCancellationTokenSource.IsCancellationRequested || IsDisposed)
                 {
                     // disposing/canceling, do nothing and exit
                     return;
@@ -310,6 +314,11 @@ namespace RxWebSocket
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
+                if (_stop)
+                {
+                    return;
+                }
+
                 if (!IsOpen)
                 {
                     _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
@@ -319,7 +328,7 @@ namespace RxWebSocket
                 _logger?.Log(FormatLogMessage($"Sending: Type Text, length {message.Count}"));
 
                 await _socket
-                    .SendAsync(message, WebSocketMessageType.Text, true, _sendingCancellationToken)
+                    .SendAsync(message, WebSocketMessageType.Text, true, _stopCancellationTokenSource.Token)
                     .ConfigureAwait(false);
             }
         }
@@ -329,6 +338,11 @@ namespace RxWebSocket
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
+                if (_stop)
+                {
+                    return;
+                }
+
                 if (!IsOpen)
                 {
                     _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
@@ -338,7 +352,7 @@ namespace RxWebSocket
                 _logger?.Log(FormatLogMessage($"Sending: Type Binary, length {message.Count}"));
 
                 await _socket
-                    .SendAsync(message, WebSocketMessageType.Binary, true, _sendingCancellationToken)
+                    .SendAsync(message, WebSocketMessageType.Binary, true, _stopCancellationTokenSource.Token)
                     .ConfigureAwait(false);
             }
         }
@@ -356,6 +370,7 @@ namespace RxWebSocket
                 _binaryMessageQueueWriter.Complete();
                 _textMessageQueueWriter.Complete();
                 _exceptionSubject.Dispose();
+                _stopCancellationTokenSource.Dispose();
             }
         }
     }

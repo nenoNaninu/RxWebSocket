@@ -34,6 +34,8 @@ namespace RxWebSocket
 
         bool IsDisposed { get; }
 
+        bool IsListening { get; }
+
         WebSocketState WebSocketState { get; }
 
         /// <summary>

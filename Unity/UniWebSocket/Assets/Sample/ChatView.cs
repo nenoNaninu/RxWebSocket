@@ -11,9 +11,9 @@ namespace RxWebSocket.Sample
         [SerializeField] private InputField _nameInputField;
         [SerializeField] private InputField _chatTextInputField;
 
-        [SerializeField] private Button _connectBotton;
-        [SerializeField] private Button _closeBotton;
-        [SerializeField] private Button _sendBotton;
+        [SerializeField] private Button _connectButton;
+        [SerializeField] private Button _closeButton;
+        [SerializeField] private Button _sendButton;
 
         [SerializeField] private RectTransform _scrollViewContent;
 
@@ -24,9 +24,9 @@ namespace RxWebSocket.Sample
         public InputField UriInputField => _uriInputField;
         public InputField NameInputField => _nameInputField;
         public InputField ChatTextInputField => _chatTextInputField;
-        public Button ConnectButton => _connectBotton;
-        public Button CloseButton => _closeBotton;
-        public Button SendButton => _sendBotton;
+        public Button ConnectButton => _connectButton;
+        public Button CloseButton => _closeButton;
+        public Button SendButton => _sendButton;
         IObservable<Unit> IChatView.OnDestroy => _onDestroySubject.AsObservable();
 
         private Subject<Unit> _onDestroySubject;
