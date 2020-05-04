@@ -367,6 +367,10 @@ namespace RxWebSocket
             if (!IsDisposed)
             {
                 IsDisposed = true;
+                _stop = true;
+
+                _stopCancellationTokenSource.Cancel();
+
                 _binaryMessageQueueWriter.Complete();
                 _textMessageQueueWriter.Complete();
                 _exceptionSubject.Dispose();

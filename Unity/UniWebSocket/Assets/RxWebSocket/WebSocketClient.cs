@@ -209,6 +209,7 @@ namespace RxWebSocket
 
                 _socket?.Dispose();
 
+                _cancellationSocketJobs.Cancel();
                 _cancellationSocketJobs.Dispose();
 
                 _webSocketMessageSender.Dispose();

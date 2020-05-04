@@ -251,13 +251,11 @@ namespace RxWebSocket
         {
             if (!IsDisposed)
             {
-                if (!_stop)
-                {
-                    _stop = true;
-                    _stopCancellationTokenSource.Cancel();
-                }
-
                 IsDisposed = true;
+                _stop = true;
+                
+                _stopCancellationTokenSource.Cancel();
+                
                 _sentMessageQueueWriter.Complete();
                 _exceptionSubject.Dispose();
                 _stopCancellationTokenSource.Dispose();
