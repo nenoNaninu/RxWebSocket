@@ -124,8 +124,8 @@ If you know that you will receive large messages, a larger initial memory alloca
 You can use `ReceivingMemoryConfig`.
 ```csharp
 // 1024KB
-var memory = new ReceivingMemoryConfig(1024 * 1024);
-var client = new WebSocketClient(uri, memory, _logger);
+var config = new ReceiverMemoryConfig(1024 * 1024);
+var client = new WebSocketClient(uri, receiverConfig: config);
 ```
 
 # Sending options
