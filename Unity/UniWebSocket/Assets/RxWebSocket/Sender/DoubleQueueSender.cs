@@ -7,19 +7,19 @@ namespace RxWebSocket
     {
         private readonly IWebSocketMessageSenderCore _core;
 
-        public DoubleQueueSender(int binaryChannelCapacity, int textChannelCapacity)
+        public DoubleQueueSender(int binaryQueueCapacity, int textQueueCapacity)
         {
             Channel<ArraySegment<byte>> binaryMessageQueue = null;
             Channel<ArraySegment<byte>> textMessageQueue = null;
 
-            if (0 < binaryChannelCapacity)
+            if (0 < binaryQueueCapacity)
             {
-                binaryMessageQueue = Channel.CreateBounded<ArraySegment<byte>>(new BoundedChannelOptions(binaryChannelCapacity) { SingleReader = true, SingleWriter = false });
+                binaryMessageQueue = Channel.CreateBounded<ArraySegment<byte>>(new BoundedChannelOptions(binaryQueueCapacity) { SingleReader = true, SingleWriter = false });
             }
 
-            if (0 < textChannelCapacity)
+            if (0 < textQueueCapacity)
             {
-                textMessageQueue = Channel.CreateBounded<ArraySegment<byte>>(new BoundedChannelOptions(textChannelCapacity) { SingleReader = true, SingleWriter = false });
+                textMessageQueue = Channel.CreateBounded<ArraySegment<byte>>(new BoundedChannelOptions(textQueueCapacity) { SingleReader = true, SingleWriter = false });
             }
 
             _core = new DoubleQueueSenderCore(binaryMessageQueue, textMessageQueue);
