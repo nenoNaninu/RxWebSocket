@@ -59,8 +59,8 @@ namespace RxWebSocket
 
         public WebSocketClient(
             Uri url,
-            WebSocketMessageSender messageSender = null,
-            ReceivingMemoryConfig receivingMemoryConfig = null,
+            WebSocketMessageSender sender = null,
+            ReceiverMemoryConfig receiverConfig = null,
             ILogger logger = null,
             string name = "CLIENT",
             Encoding messageEncoding = null,
@@ -73,15 +73,15 @@ namespace RxWebSocket
 
             Url = url;
             Name = name;
-            MessageEncoding = messageEncoding ?? Encoding.UTF8;
             _logger = logger;
+            MessageEncoding = messageEncoding ?? Encoding.UTF8;
 
-            receivingMemoryConfig = receivingMemoryConfig ?? ReceivingMemoryConfig.Default; //cannot use =?? in unity
-            _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
+            receiverConfig = receiverConfig ?? ReceiverMemoryConfig.Default; //cannot use =?? in unity
+            _memoryPool = new MemoryPool(receiverConfig.InitialMemorySize, receiverConfig.MarginSize, logger);
 
             _clientFactory = clientFactory ?? MakeDefaultClientFactory();
 
-            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
+            _webSocketMessageSender = sender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetLoggingConfig(logger, Name);
 
             _webSocketMessageSender
@@ -91,8 +91,8 @@ namespace RxWebSocket
 
         public WebSocketClient(
             WebSocket connectedSocket,
-            WebSocketMessageSender messageSender = null,
-            ReceivingMemoryConfig receivingMemoryConfig = null,
+            WebSocketMessageSender sender = null,
+            ReceiverMemoryConfig receiverConfig = null,
             ILogger logger = null,
             string name = "CLIENT",
             Encoding messageEncoding = null)
@@ -106,10 +106,10 @@ namespace RxWebSocket
             _logger = logger;
             MessageEncoding = messageEncoding ?? Encoding.UTF8;
 
-            receivingMemoryConfig = receivingMemoryConfig ?? ReceivingMemoryConfig.Default;
-            _memoryPool = new MemoryPool(receivingMemoryConfig.InitialMemorySize, receivingMemoryConfig.MarginSize, logger);
+            receiverConfig = receiverConfig ?? ReceiverMemoryConfig.Default;
+            _memoryPool = new MemoryPool(receiverConfig.InitialMemorySize, receiverConfig.MarginSize, logger);
 
-            _webSocketMessageSender = messageSender?.AsCore() ?? new SingleQueueSenderCore();
+            _webSocketMessageSender = sender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetLoggingConfig(logger, Name);
 
             _webSocketMessageSender

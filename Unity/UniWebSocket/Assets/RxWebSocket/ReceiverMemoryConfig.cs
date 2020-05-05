@@ -1,8 +1,8 @@
 ﻿namespace RxWebSocket
 {
-    public class ReceivingMemoryConfig
+    public class ReceiverMemoryConfig
     {
-        public static ReceivingMemoryConfig Default { get; } = new ReceivingMemoryConfig(64 * 1024, 4 * 1024);
+        public static ReceiverMemoryConfig Default { get; } = new ReceiverMemoryConfig(64 * 1024, 4 * 1024);
 
         /// <summary>
         /// initial memory pool size for receive. default is 64 * 1024 byte(64KB)
@@ -16,13 +16,18 @@
         /// </summary>
         public int MarginSize { get; }
 
-        public ReceivingMemoryConfig(int initialMemorySize, int marginSize)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="initialMemorySize"></param>
+        /// <param name="marginSize">if use ClientWebSocketOptions.SetBuffer(int receiveBufferSize, int sendBufferSize) in clientFactory, set this argument.</param>
+        public ReceiverMemoryConfig(int initialMemorySize, int marginSize)
         {
             InitialMemorySize = initialMemorySize;
             MarginSize = marginSize;
         }
 
-        public ReceivingMemoryConfig(int initialMemorySize)
+        public ReceiverMemoryConfig(int initialMemorySize)
         {
             InitialMemorySize = initialMemorySize;
             MarginSize = 4 * 1024;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using RxWebSocket.Logging;
 using UniRx;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
+using Utf8Json;
 
 namespace RxWebSocket.Sample
 {
@@ -24,33 +26,53 @@ namespace RxWebSocket.Sample
             //         KeepAliveInterval = TimeSpan.FromSeconds(5),
             //     }
             // });
-            var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
-            {
-                Options =
-                {
-                    KeepAliveInterval = TimeSpan.FromSeconds(5),
-                    //Proxy = ...
-                    //ClientCertificates = ...
-                }
-            });
+            //var factory = new Func<ClientWebSocket>(() => new ClientWebSocket
+            //{
+            //    Options =
+            //    {
+            //        KeepAliveInterval = TimeSpan.FromSeconds(5),
+            //        //Proxy = ...
+            //        //ClientCertificates = ...
+            //    }
+            //});
             //            var url = new Uri("ws://echo.websocket.org");
             var url = new Uri("wss://echo.websocket.org/");
 
-            _client = new WebSocketClient(url, logger: new UnityConsoleLogger());
+            _client = new WebSocketClient(url, receiverConfig: new ReceiverMemoryConfig(8 * 1024), logger: new UnityConsoleLogger());
 
-            _client.Send("いやっほーーーー");
+            //_client.Send("いやっほーーーー");
 
-            _client.TextMessageReceived
-                .ObserveOn(Scheduler.MainThread)
-                .Subscribe(msg =>
-                {
-                    Debug.Log($"Message received: {msg}");
-                    _transform.position += Vector3.up * 10;
-                })
-                .AddTo(this);
+            //_client.TextMessageReceived
+            //    .ObserveOn(Scheduler.MainThread)
+            //    .Subscribe(msg =>
+            //    {
+            //        Debug.Log($"Message received: {msg}");
+            //        _transform.position += Vector3.up * 10;
+            //    })
+            //    .AddTo(this);
 
             await _client.ConnectAndStartListening();
-            _client.Send("はじめまーす");
+            //_client.Send("はじめまーす");
+
+
+            var array = Enumerable.Range(0, 8 * 1024).ToArray();
+
+            _client.BinaryMessageReceived
+                .Subscribe(x =>
+                {
+                    var deserialize = JsonSerializer.Deserialize<int[]>(x);
+                    for (int i = 0; i < deserialize.Length; i++)
+                    {
+                        if (array[i] != deserialize[i])
+                        {
+                            Debug.LogError($"does not equal!! {array[i]}, {deserialize[i]}");
+                        }
+                    }
+                });
+
+            var json_array = JsonSerializer.Serialize(array);
+            Debug.Log(json_array.Length);
+            _client.Send(json_array);
         }
 
         private async void OnDestroy()

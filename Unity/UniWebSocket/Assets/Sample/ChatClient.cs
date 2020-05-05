@@ -30,7 +30,7 @@ namespace RxWebSocket.Sample
         {
             _close = false;
             var channel = Channel.CreateBounded<SentMessage>(new BoundedChannelOptions(5) { SingleReader = true, SingleWriter = false });
-            _webSocketClient = new WebSocketClient(new Uri(uri), logger: _logger, messageSender: new SingleQueueSender(), name: name);
+            _webSocketClient = new WebSocketClient(new Uri(uri), logger: _logger, sender: new SingleQueueSender(), name: name);
 
             _disposables = new CompositeDisposable();
 

@@ -613,7 +613,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -235.05, y: -0.000034633787}
+  m_AnchoredPosition: {x: -235.05, y: 0.00003667117}
   m_SizeDelta: {x: 470.1, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &519669739
@@ -2007,7 +2007,7 @@ MonoBehaviour:
   _uriInputField: {fileID: 1998898093}
   _nameInputField: {fileID: 2043121417}
   _chatTextInputField: {fileID: 888751786}
-  _connectButton: {fileID: 1548166597}
+  _connectButton: {fileID: 1711721825}
   _closeButton: {fileID: 1548166597}
   _sendButton: {fileID: 1501288360}
   _scrollViewContent: {fileID: 519669738}

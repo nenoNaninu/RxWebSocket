@@ -64,6 +64,7 @@ namespace RxWebSocket
             {
                 _stop = true;
                 _stopCancellationTokenSource.Cancel();
+                _sentMessageQueueWriter.Complete();
             }
         }
 
@@ -273,11 +274,14 @@ namespace RxWebSocket
             if (!IsDisposed)
             {
                 IsDisposed = true;
-                _stop = true;
 
-                _stopCancellationTokenSource.Cancel();
-
-                _sentMessageQueueWriter.Complete();
+                if (!_stop)
+                {
+                    _stop = true;
+                    _stopCancellationTokenSource.Cancel();
+                    _sentMessageQueueWriter.Complete();
+                }
+ 
                 _exceptionSubject.Dispose();
                 _stopCancellationTokenSource.Dispose();
             }

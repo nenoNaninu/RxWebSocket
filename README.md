@@ -29,7 +29,7 @@ Various settings can be made in the constructor.
   - if you use `Microsoft.Extensions.Logging.ILogger<T>` in ASP.NET Core or Console environment, it is easy to integrate using  `AsWebSocketLogger()` which is extension method.
 - [Memory settings for receiving](#memory-settings-for-receiving). 
   - You can set how to use the memory when receiving messages.
-  - By default, a 32KB buffer is allocated. The buffer is automatically expanded as needed.
+  - By default, a 64KB buffer is allocated. The buffer is automatically expanded as needed.
   - If you know that you will receive large messages, a larger initial memory allocation will reduce wasted allocation.
 - [Message sending method setting](#sending-options).
   - Internally, System.Threading.Channels is run in the background to send messages. 
@@ -81,8 +81,8 @@ try
     //Send() function end as soon as writing is completed in the queue. 
     //Therefore, it does not matter whether the sending is finished.
     byte[] array = MakeSomeArray();
-    webSocketClient.Send(array);
-    webSocketClient.Send("string or byte[]");
+    bool check1 = webSocketClient.Send(array);
+    bool check2 = webSocketClient.Send("string or byte[]");
 
     //The SendInstant function ignores the queue used inside the Send function and sends it immediately.
     //await for transmission to complete.
@@ -119,7 +119,7 @@ await webSocketClient.WaitUntilClose;
 
 # Memory settings for receiving.
 You can set how to use the memory when receiving messages.
-By default, a 32KB buffer is allocated. The buffer is automatically expanded as needed.
+By default, a 64KB buffer is allocated. The buffer is automatically expanded as needed.
 If you know that you will receive large messages, a larger initial memory allocation will reduce wasted allocation.
 You can use `ReceivingMemoryConfig`.
 ```csharp
