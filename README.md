@@ -121,7 +121,7 @@ await webSocketClient.WaitUntilClose;
 You can set how to use the memory when receiving messages.
 By default, a 64KB buffer is allocated. The buffer is automatically expanded as needed.
 If you know that you will receive large messages, a larger initial memory allocation will reduce wasted allocation.
-You can use `ReceivingMemoryConfig`.
+You can use `ReceiverMemoryConfig`.
 ```csharp
 // 1024KB
 var config = new ReceiverMemoryConfig(1024 * 1024);
