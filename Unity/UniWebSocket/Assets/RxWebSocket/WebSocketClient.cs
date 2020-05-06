@@ -47,13 +47,14 @@ namespace RxWebSocket
         /// </summary>
         public string Name { get; }
 
-        public bool IsDisposed { get; private set; }
-
         public Encoding MessageEncoding { get; }
+
+        public bool IsDisposed { get; private set; }
 
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
         public bool IsListening { get; private set; }
+
         public Task WaitUntilClose { get; private set; }
         #endregion
 

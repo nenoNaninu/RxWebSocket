@@ -30,7 +30,7 @@ namespace RxWebSocket
 
         private WebSocket _socket;
         private ILogger _logger;
-        private bool _stop;
+        private bool _isStopRequested;
 
         public Encoding MessageEncoding { get; } = Encoding.UTF8;
         public bool IsDisposed { get; private set; }
@@ -62,7 +62,7 @@ namespace RxWebSocket
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                _stop = true;
+                _isStopRequested = true;
                 _stopCancellationTokenSource.Cancel();
                 _sentMessageQueueWriter.Complete();
             }
@@ -207,7 +207,7 @@ namespace RxWebSocket
             {
                 while (await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_stop && _sentMessageQueueReader.TryRead(out var message))
+                    while (!_isStopRequested && _sentMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -247,7 +247,7 @@ namespace RxWebSocket
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_stop)
+                if (_isStopRequested)
                 {
                     return;
                 }
@@ -272,9 +272,9 @@ namespace RxWebSocket
             {
                 IsDisposed = true;
 
-                if (!_stop)
+                if (!_isStopRequested)
                 {
-                    _stop = true;
+                    _isStopRequested = true;
                     _stopCancellationTokenSource.Cancel();
                     _sentMessageQueueWriter.Complete();
                 }

@@ -35,7 +35,7 @@ namespace RxWebSocket
 
         private WebSocket _socket;
         private ILogger _logger;
-        private bool _stop;
+        private bool _isStopRequested;
 
         public Encoding MessageEncoding { get; } = Encoding.UTF8;
         public bool IsDisposed { get; private set; }
@@ -73,7 +73,7 @@ namespace RxWebSocket
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                _stop = true;
+                _isStopRequested = true;
                 _stopCancellationTokenSource.Cancel();
                 _binaryMessageQueueWriter.Complete();
                 _textMessageQueueWriter.Complete();
@@ -235,7 +235,7 @@ namespace RxWebSocket
             {
                 while (await _binaryMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_stop && _binaryMessageQueueReader.TryRead(out var message))
+                    while (!_isStopRequested && _binaryMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -276,7 +276,7 @@ namespace RxWebSocket
             {
                 while (await _textMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_stop && _textMessageQueueReader.TryRead(out var message))
+                    while (!_isStopRequested && _textMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -316,7 +316,7 @@ namespace RxWebSocket
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_stop)
+                if (_isStopRequested)
                 {
                     return;
                 }
@@ -340,7 +340,7 @@ namespace RxWebSocket
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_stop)
+                if (_isStopRequested)
                 {
                     return;
                 }
@@ -370,9 +370,9 @@ namespace RxWebSocket
             {
                 IsDisposed = true;
 
-                if (!_stop)
+                if (!_isStopRequested)
                 {
-                    _stop = true;
+                    _isStopRequested = true;
                     _stopCancellationTokenSource.Cancel();
                     _binaryMessageQueueWriter.Complete();
                     _textMessageQueueWriter.Complete();

@@ -21,16 +21,10 @@
         /// </summary>
         /// <param name="initialMemorySize"></param>
         /// <param name="marginSize">if use ClientWebSocketOptions.SetBuffer(int receiveBufferSize, int sendBufferSize) in clientFactory, set this argument.</param>
-        public ReceiverMemoryConfig(int initialMemorySize, int marginSize)
+        public ReceiverMemoryConfig(int initialMemorySize, int marginSize = 4 * 1024)
         {
             InitialMemorySize = initialMemorySize;
             MarginSize = marginSize;
-        }
-
-        public ReceiverMemoryConfig(int initialMemorySize)
-        {
-            InitialMemorySize = initialMemorySize;
-            MarginSize = 4 * 1024;
         }
     }
 }
