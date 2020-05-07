@@ -17,15 +17,20 @@ using System.Reactive.Linq;
 using UniRx;
 #endif
 
-namespace RxWebSocket
+namespace RxWebSocket.Senders
 {
-    internal class TextOnlySenderCore : IWebSocketMessageSenderCore
+    internal class DoubleQueueSenderCore : IWebSocketMessageSenderCore
     {
-        private readonly Channel<ArraySegment<byte>> _sentMessageQueue;
-        private readonly ChannelReader<ArraySegment<byte>> _sentMessageQueueReader;
-        private readonly ChannelWriter<ArraySegment<byte>> _sentMessageQueueWriter;
+        private readonly Channel<ArraySegment<byte>> _binaryMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _binaryMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _binaryMessageQueueWriter;
+
+        private readonly Channel<ArraySegment<byte>> _textMessageQueue;
+        private readonly ChannelReader<ArraySegment<byte>> _textMessageQueueReader;
+        private readonly ChannelWriter<ArraySegment<byte>> _textMessageQueueWriter;
+
         private readonly AsyncLock _sendLocker = new AsyncLock();
-        private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
+        private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
         private readonly CancellationTokenSource _stopCancellationTokenSource = new CancellationTokenSource();
 
         private WebSocket _socket;
@@ -38,13 +43,19 @@ namespace RxWebSocket
 
         public bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
 
-        public IObservable<WebSocketExceptionDetail> ExceptionHappenedInSending => _exceptionSubject.AsObservable();
+        public IObservable<WebSocketBackgroundException> ExceptionHappenedInSending => _exceptionSubject.AsObservable();
 
-        public TextOnlySenderCore(Channel<ArraySegment<byte>> sentMessageQueue = null)
+        public DoubleQueueSenderCore(
+            Channel<ArraySegment<byte>> binaryMessageQueue = null,
+            Channel<ArraySegment<byte>> textMessageQueue = null)
         {
-            _sentMessageQueue = sentMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-            _sentMessageQueueReader = _sentMessageQueue.Reader;
-            _sentMessageQueueWriter = _sentMessageQueue.Writer;
+            _binaryMessageQueue = binaryMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _binaryMessageQueueReader = _binaryMessageQueue.Reader;
+            _binaryMessageQueueWriter = _binaryMessageQueue.Writer;
+
+            _textMessageQueue = textMessageQueue ?? Channel.CreateUnbounded<ArraySegment<byte>>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
+            _textMessageQueueReader = _textMessageQueue.Reader;
+            _textMessageQueueWriter = _textMessageQueue.Writer;
         }
 
         public void SetLoggingConfig(ILogger logger, string name)
@@ -64,15 +75,22 @@ namespace RxWebSocket
             {
                 _isStopRequested = true;
                 _stopCancellationTokenSource.Cancel();
-                _sentMessageQueueWriter.Complete();
+                _binaryMessageQueueWriter.Complete();
+                _textMessageQueueWriter.Complete();
             }
+        }
+
+        public void SendMessageFromQueue()
+        {
+            _ = Task.Factory.StartNew(_ => SendBinaryMessageFromQueue(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
+            _ = Task.Factory.StartNew(_ => SendTextMessageFromQueue(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
         }
 
         public bool Send(string message)
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
+                return _textMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
             }
             else
             {
@@ -84,7 +102,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                return _binaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
             }
             else
             {
@@ -96,7 +114,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return _sentMessageQueueWriter.TryWrite(message);
+                return _binaryMessageQueueWriter.TryWrite(message);
             }
             else
             {
@@ -109,11 +127,14 @@ namespace RxWebSocket
             if (ValidationUtils.ValidateInput(message))
             {
 
-                if (messageType != WebSocketMessageType.Text)
+                if (messageType == WebSocketMessageType.Binary)
                 {
-                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                    return _binaryMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
                 }
-                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                else
+                {
+                    return _textMessageQueueWriter.TryWrite(new ArraySegment<byte>(message));
+                }
             }
             else
             {
@@ -125,11 +146,15 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                if (messageType != WebSocketMessageType.Text)
+
+                if (messageType == WebSocketMessageType.Binary)
                 {
-                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                    return _binaryMessageQueueWriter.TryWrite(message);
                 }
-                return _sentMessageQueueWriter.TryWrite(message);
+                else
+                {
+                    return _textMessageQueueWriter.TryWrite(message);
+                }
             }
             else
             {
@@ -141,7 +166,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
+                return SendTextInternalSynchronized(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
             }
 
             throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
@@ -151,7 +176,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(new ArraySegment<byte>(message));
+                return SendBinaryInternalSynchronized(new ArraySegment<byte>(message));
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -162,12 +187,14 @@ namespace RxWebSocket
             if (ValidationUtils.ValidateInput(message))
             {
 
-                if (messageType != WebSocketMessageType.Text)
+                if (messageType == WebSocketMessageType.Binary)
                 {
-                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                    return SendBinaryInternalSynchronized(new ArraySegment<byte>(message));
                 }
-
-                return SendInternalSynchronized(new ArraySegment<byte>(message));
+                else
+                {
+                    return SendTextInternalSynchronized(new ArraySegment<byte>(message));
+                }
             }
 
             throw new WebSocketBadInputException($"Input message (byte[]) of the SendInstant function is null or 0 Length. Please correct it.");
@@ -177,7 +204,7 @@ namespace RxWebSocket
         {
             if (ValidationUtils.ValidateInput(ref message))
             {
-                return SendInternalSynchronized(message);
+                return SendBinaryInternalSynchronized(message);
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is 0 Count. Please correct it.");
@@ -188,38 +215,36 @@ namespace RxWebSocket
             if (ValidationUtils.ValidateInput(ref message))
             {
 
-                if (messageType != WebSocketMessageType.Text)
+                if (messageType == WebSocketMessageType.Binary)
                 {
-                    throw new WebSocketBadInputException($"In TextOnlySender, the message type must be text.");
+                    return SendBinaryInternalSynchronized(message);
                 }
-
-                return SendInternalSynchronized(message);
+                else
+                {
+                    return SendTextInternalSynchronized(message);
+                }
             }
 
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
         }
 
-        public void SendMessageFromQueue()
-        {
-            _ = Task.Factory.StartNew(_ => SendMessageFromQueueInternal(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
-        }
 
-        public async Task SendMessageFromQueueInternal()
+        private async Task SendBinaryMessageFromQueue()
         {
             try
             {
-                while (await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
+                while (await _binaryMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_isStopRequested && _sentMessageQueueReader.TryRead(out var message))
+                    while (!_isStopRequested && _binaryMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
-                            await SendInternalSynchronized(message).ConfigureAwait(false);
+                            await SendBinaryInternalSynchronized(message).ConfigureAwait(false);
                         }
                         catch (Exception e)
                         {
                             _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                            _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
+                            _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Send));
                         }
                     }
                 }
@@ -241,12 +266,53 @@ namespace RxWebSocket
                 }
 
                 _logger?.Error(e, FormatLogMessage($"Sending message thread failed, error: {e.Message}."));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendQueue));
+                _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.SendQueue));
+            }
+        }
+
+        private async Task SendTextMessageFromQueue()
+        {
+            try
+            {
+                while (await _textMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
+                {
+                    while (!_isStopRequested && _textMessageQueueReader.TryRead(out var message))
+                    {
+                        try
+                        {
+                            await SendTextInternalSynchronized(message).ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
+                            _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Send));
+                        }
+                    }
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // task was canceled, ignore
+            }
+            catch (OperationCanceledException)
+            {
+                // operation was canceled, ignore
+            }
+            catch (Exception e)
+            {
+                if (_stopCancellationTokenSource.IsCancellationRequested || IsDisposed)
+                {
+                    // disposing/canceling, do nothing and exit
+                    return;
+                }
+
+                _logger?.Error(e, FormatLogMessage($"Sending message thread failed, error: {e.Message}."));
+                _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.SendQueue));
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private async Task SendInternalSynchronized(ArraySegment<byte> message)
+        private async Task SendTextInternalSynchronized(ArraySegment<byte> message)
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
@@ -269,6 +335,35 @@ namespace RxWebSocket
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private async Task SendBinaryInternalSynchronized(ArraySegment<byte> message)
+        {
+            using (await _sendLocker.LockAsync().ConfigureAwait(false))
+            {
+                if (_isStopRequested)
+                {
+                    return;
+                }
+
+                if (!IsOpen)
+                {
+                    _logger?.Warn(FormatLogMessage($"Client is not connected to server, cannot send:  {message}"));
+                    return;
+                }
+
+                _logger?.Log(FormatLogMessage($"Sending: Type Binary, length {message.Count}"));
+
+                await _socket
+                    .SendAsync(message, WebSocketMessageType.Binary, true, _stopCancellationTokenSource.Token)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        private string FormatLogMessage(string msg)
+        {
+            return $"[WEBSOCKET {Name}] {msg}";
+        }
+
         public void Dispose()
         {
             if (!IsDisposed)
@@ -279,17 +374,13 @@ namespace RxWebSocket
                 {
                     _isStopRequested = true;
                     _stopCancellationTokenSource.Cancel();
-                    _sentMessageQueueWriter.Complete();
+                    _binaryMessageQueueWriter.Complete();
+                    _textMessageQueueWriter.Complete();
                 }
- 
+
                 _exceptionSubject.Dispose();
                 _stopCancellationTokenSource.Dispose();
             }
-        }
-
-        private string FormatLogMessage(string msg)
-        {
-            return $"[WEBSOCKET {Name}] {msg}";
         }
     }
 }

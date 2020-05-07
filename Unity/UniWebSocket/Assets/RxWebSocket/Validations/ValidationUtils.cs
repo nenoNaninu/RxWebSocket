@@ -35,6 +35,13 @@ namespace RxWebSocket.Validations
         /// </summary>
         /// <param name="value">The value to be validated</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateInput(ArraySegment<byte> value) => value.Count != 0;
+
+        /// <summary>
+        /// returns false for bad input.
+        /// </summary>
+        /// <param name="value">The value to be validated</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateInput<T>(T value) => !EqualityComparer<T>.Default.Equals(value, default);
     }
 }

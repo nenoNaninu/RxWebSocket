@@ -1,7 +1,7 @@
 using System;
 using RxWebSocket.Logging;
 
-namespace RxWebSocket
+namespace RxWebSocket.Utils
 {
     public class MemoryPool
     {

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Net.WebSockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using RxWebSocket.Exceptions;
 using RxWebSocket.Logging;
 
-namespace RxWebSocket
+namespace RxWebSocket.Senders
 {
     internal interface IWebSocketMessageSenderCore : IDisposable
     {
@@ -13,7 +13,7 @@ namespace RxWebSocket
 
         string Name { get; }
 
-        IObservable<WebSocketExceptionDetail> ExceptionHappenedInSending { get; }
+        IObservable<WebSocketBackgroundException> ExceptionHappenedInSending { get; }
 
         void SendMessageFromQueue();
 

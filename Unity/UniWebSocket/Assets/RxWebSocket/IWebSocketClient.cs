@@ -2,6 +2,8 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
+using RxWebSocket.Exceptions;
+using RxWebSocket.Message;
 
 namespace RxWebSocket
 {
@@ -21,7 +23,7 @@ namespace RxWebSocket
         /// </summary>
         IObservable<CloseMessage> CloseMessageReceived { get; }
 
-        IObservable<WebSocketExceptionDetail> ExceptionHappened { get; }
+        IObservable<WebSocketBackgroundException> ExceptionHappened { get; }
 
         /// <summary>
         /// For logging purpose.

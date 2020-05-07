@@ -2,7 +2,7 @@ using System;
 using System.Net.WebSockets;
 using RxWebSocket.Exceptions;
 
-namespace RxWebSocket
+namespace RxWebSocket.Message
 {
     public class SentMessage
     {

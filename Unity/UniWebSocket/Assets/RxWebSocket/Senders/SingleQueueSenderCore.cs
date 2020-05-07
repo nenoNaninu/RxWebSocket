@@ -7,6 +7,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Logging;
+using RxWebSocket.Message;
 using RxWebSocket.Threading;
 using RxWebSocket.Validations;
 
@@ -17,7 +18,7 @@ using System.Reactive.Linq;
 using UniRx;
 #endif
 
-namespace RxWebSocket
+namespace RxWebSocket.Senders
 {
     internal class SingleQueueSenderCore : IWebSocketMessageSenderCore
     {
@@ -25,7 +26,7 @@ namespace RxWebSocket
         private readonly ChannelReader<SentMessage> _sentMessageQueueReader;
         private readonly ChannelWriter<SentMessage> _sentMessageQueueWriter;
         private readonly AsyncLock _sendLocker = new AsyncLock();
-        private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
+        private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
         private readonly CancellationTokenSource _stopCancellationTokenSource = new CancellationTokenSource();
 
         private WebSocket _socket;
@@ -38,7 +39,7 @@ namespace RxWebSocket
 
         public bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
 
-        public IObservable<WebSocketExceptionDetail> ExceptionHappenedInSending => _exceptionSubject.AsObservable();
+        public IObservable<WebSocketBackgroundException> ExceptionHappenedInSending => _exceptionSubject.AsObservable();
 
         public SingleQueueSenderCore(Channel<SentMessage> sentMessageQueue = null)
         {
@@ -198,7 +199,7 @@ namespace RxWebSocket
                         catch (Exception e)
                         {
                             _logger?.Error(e, FormatLogMessage($"Failed to send binary message: '{message}'. Error: {e.Message}"));
-                            _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Send));
+                            _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Send));
                         }
                     }
                 }
@@ -220,7 +221,7 @@ namespace RxWebSocket
                 }
 
                 _logger?.Error(e, FormatLogMessage($"Sending message thread failed, error: {e.Message}."));
-                _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.SendQueue));
+                _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.SendQueue));
             }
         }
 

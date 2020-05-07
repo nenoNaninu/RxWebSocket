@@ -4,10 +4,6 @@ namespace RxWebSocket.Exceptions
 {
     public class WebSocketBadInputException : WebSocketException
     {
-        public WebSocketBadInputException()
-        {
-        }
-
         public WebSocketBadInputException(string message) : base(message)
         {
         }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Channels;
 
-namespace RxWebSocket
+namespace RxWebSocket.Senders
 {
     public class DoubleQueueSender : WebSocketMessageSender
     {

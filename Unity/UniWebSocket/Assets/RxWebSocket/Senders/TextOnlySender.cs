@@ -1,30 +1,29 @@
 ﻿using System;
 using System.Threading.Channels;
 
-namespace RxWebSocket
+namespace RxWebSocket.Senders
 {
-    public class BinaryOnlySender : WebSocketMessageSender
+    public class TextOnlySender: WebSocketMessageSender
     {
         private readonly IWebSocketMessageSenderCore _core;
 
-        public BinaryOnlySender(int capacity)
+        public TextOnlySender(int capacity)
         {
             if (0 < capacity)
             {
                 var channel = Channel.CreateBounded<ArraySegment<byte>>(new BoundedChannelOptions(capacity) { SingleReader = true, SingleWriter = false });
-                _core = new BinaryOnlySenderCore(channel);
+                _core = new TextOnlySenderCore(channel);
             }
             else
             {
-                _core = new BinaryOnlySenderCore();
+                _core = new TextOnlySenderCore();
             }
         }
 
-        public BinaryOnlySender(Channel<ArraySegment<byte>> sentMessageQueue = null)
+        public TextOnlySender(Channel<ArraySegment<byte>> sentMessageQueue = null)
         {
-            _core = new BinaryOnlySenderCore(sentMessageQueue);
+            _core = new TextOnlySenderCore(sentMessageQueue);
         }
-
         internal override IWebSocketMessageSenderCore AsCore()
         {
             return _core;

@@ -1,4 +1,4 @@
-﻿namespace RxWebSocket
+﻿namespace RxWebSocket.Senders
 {
     public abstract class WebSocketMessageSender
     {

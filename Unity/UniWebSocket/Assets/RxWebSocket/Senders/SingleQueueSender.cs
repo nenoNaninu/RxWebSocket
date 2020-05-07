@@ -1,6 +1,7 @@
 ﻿using System.Threading.Channels;
+using RxWebSocket.Message;
 
-namespace RxWebSocket
+namespace RxWebSocket.Senders
 {
     public class SingleQueueSender : WebSocketMessageSender
     {

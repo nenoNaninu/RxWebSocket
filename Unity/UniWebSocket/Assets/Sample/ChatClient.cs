@@ -4,6 +4,8 @@ using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using RxWebSocket.Logging;
+using RxWebSocket.Message;
+using RxWebSocket.Senders;
 using UniRx;
 using Utf8Json;
 
@@ -48,7 +50,7 @@ namespace RxWebSocket.Sample
                 .Subscribe(x =>
                 {
                     _logger?.Log("exception stream...");
-                    _logger?.Log(x.ErrorType.ToString());
+                    _logger?.Log(x.ExceptionType.ToString());
                     _logger?.Log(x.Exception.ToString());
                 })
                 .AddTo(_disposables);

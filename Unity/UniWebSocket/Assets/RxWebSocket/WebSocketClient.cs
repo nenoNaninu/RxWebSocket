@@ -3,9 +3,13 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RxWebSocket.Exceptions;
 using RxWebSocket.Threading;
 using RxWebSocket.Validations;
 using RxWebSocket.Logging;
+using RxWebSocket.Message;
+using RxWebSocket.Senders;
+using RxWebSocket.Utils;
 
 #if NETSTANDARD2_1 || NETSTANDARD2_0
 using System.Reactive.Subjects;
@@ -32,7 +36,7 @@ namespace RxWebSocket
         private readonly Subject<byte[]> _textMessageReceivedSubject = new Subject<byte[]>();
 
         private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
-        private readonly Subject<WebSocketExceptionDetail> _exceptionSubject = new Subject<WebSocketExceptionDetail>();
+        private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
 
         private readonly CancellationTokenSource _cancellationSocketJobs = new CancellationTokenSource();
 
@@ -135,7 +139,7 @@ namespace RxWebSocket
         /// before disconnecting the connection in normal system.
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
-        public IObservable<WebSocketExceptionDetail> ExceptionHappened => _exceptionSubject.AsObservable();
+        public IObservable<WebSocketBackgroundException> ExceptionHappened => _exceptionSubject.AsObservable();
 
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
@@ -331,7 +335,7 @@ namespace RxWebSocket
                                 _logger?.Error(e, FormatLogMessage($"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
                                 if (!IsDisposed)
                                 {
-                                    _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.CloseMessageReceive));
+                                    _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
                                 }
                             }
                         }
@@ -357,7 +361,7 @@ namespace RxWebSocket
                 _logger?.Error(e, FormatLogMessage($"Error while listening to websocket stream, error: '{e.Message}'"));
                 if (!IsDisposed)
                 {
-                    _exceptionSubject.OnNext(new WebSocketExceptionDetail(e, ErrorType.Listen));
+                    _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Listen));
                 }
             }
         }

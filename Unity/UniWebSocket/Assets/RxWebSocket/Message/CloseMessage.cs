@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 
-namespace RxWebSocket
+namespace RxWebSocket.Message
 {
     public readonly struct CloseMessage
     {
