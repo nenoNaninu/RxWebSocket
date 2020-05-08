@@ -6,6 +6,7 @@
 
     <!-- NuGet -->
     <PackageId>RxWebSocket</PackageId>
+    <Title>RxWebSocket</Title>
     <PackageVersion>$(Version)</PackageVersion>
     <Authors>nenoNaninu</Authors>
     <PackageProjectUrl>https://github.com/nenoNaninu/RxWebSocket</PackageProjectUrl>
@@ -13,6 +14,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Rx, Reactive, WebSocket</PackageTags>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <Copyright>(c) nenoNaninu</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
