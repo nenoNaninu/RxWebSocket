@@ -207,6 +207,8 @@ namespace RxWebSocket
 
             try
             {
+                _webSocketMessageSender?.Dispose();
+
                 if (!IsClosed)
                 {
                     _socket?.Abort();
@@ -216,8 +218,6 @@ namespace RxWebSocket
 
                 _cancellationSocketJobs.Cancel();
                 _cancellationSocketJobs.Dispose();
-
-                _webSocketMessageSender.Dispose();
 
                 _binaryMessageReceivedSubject.Dispose();
                 _textMessageReceivedSubject.Dispose();

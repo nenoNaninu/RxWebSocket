@@ -198,7 +198,7 @@ namespace RxWebSocket.Senders
 
         public void SendMessageFromQueue()
         {
-            _ = Task.Factory.StartNew(_ => SendMessageFromQueueInternal(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
+            _ = SendMessageFromQueueInternal();
         }
 
         public async Task SendMessageFromQueueInternal()

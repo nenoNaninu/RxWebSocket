@@ -82,8 +82,8 @@ namespace RxWebSocket.Senders
 
         public void SendMessageFromQueue()
         {
-            _ = Task.Factory.StartNew(_ => SendBinaryMessageFromQueue(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
-            _ = Task.Factory.StartNew(_ => SendTextMessageFromQueue(), TaskCreationOptions.LongRunning, _stopCancellationTokenSource.Token);
+            _ = SendBinaryMessageFromQueue();
+            _ = SendTextMessageFromQueue();
         }
 
         public bool Send(string message)
