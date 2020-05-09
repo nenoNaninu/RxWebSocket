@@ -322,23 +322,26 @@ namespace RxWebSocket
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
                         //close handshake
-                        if (result.CloseStatus != null)
+                        _logger?.Log(FormatLogMessage($"Received: Close Message, Status: {result.CloseStatus.ToStringFast()}, Description: {result.CloseStatusDescription}"));
+                        _closeMessageReceivedSubject.OnNext(new CloseMessage(result.CloseStatus, result.CloseStatusDescription));
+                        try
                         {
-                            _logger?.Log(FormatLogMessage($"Received: Close Message, Status: {result.CloseStatus.Value}, Description: {result.CloseStatusDescription}"));
-                            _closeMessageReceivedSubject.OnNext(new CloseMessage(result.CloseStatus.Value, result.CloseStatusDescription));
-                            try
+                            await CloseAsync(WebSocketCloseStatus.NormalClosure,
+                                $"Response to the close message. Received close status: {result.CloseStatus.ToStringFast()}",
+                                true).ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger?.Error(e,
+                                FormatLogMessage(
+                                    $"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
+                            if (!IsDisposed)
                             {
-                                await CloseAsync(WebSocketCloseStatus.NormalClosure, $"Response to the close message. Received close status: {result.CloseStatus.Value}", true).ConfigureAwait(false);
-                            }
-                            catch (Exception e)
-                            {
-                                _logger?.Error(e, FormatLogMessage($"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
-                                if (!IsDisposed)
-                                {
-                                    _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
-                                }
+                                _exceptionSubject.OnNext(
+                                    new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
                             }
                         }
+
                         return;
                     }
                 }

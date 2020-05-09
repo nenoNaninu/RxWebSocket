@@ -15,7 +15,7 @@ namespace RxWebSocket
         /// <summary>
         /// Overridden in extension methods.
         /// </summary>
-        public static string ToString(this ExceptionType exceptionType)
+        public static string ToStringFast(this ExceptionType exceptionType)
         {
             switch (exceptionType)
             {

@@ -5,9 +5,9 @@ namespace RxWebSocket.Message
     public readonly struct CloseMessage
     {
         public readonly string CloseStatusDescription;
-        public readonly WebSocketCloseStatus CloseStatus;
+        public readonly WebSocketCloseStatus? CloseStatus;
 
-        public CloseMessage(WebSocketCloseStatus closeStatus, string closeStatusDescription)
+        public CloseMessage(WebSocketCloseStatus? closeStatus, string closeStatusDescription)
         {
             CloseStatus = closeStatus;
             CloseStatusDescription = closeStatusDescription;
