@@ -139,7 +139,7 @@ namespace RxWebSocket
         /// before disconnecting the connection in normal system.
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
-        public IObservable<WebSocketBackgroundException> ExceptionHappened => _exceptionSubject.AsObservable();
+        public IObservable<WebSocketBackgroundException> ExceptionHappenedInBackground => _exceptionSubject.AsObservable();
 
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
@@ -160,7 +160,7 @@ namespace RxWebSocket
                     throw new ObjectDisposedException("WebSocketClient is already disposed.");
                 }
 
-                var connectionTask = ConnectAndStartListeningInternal();
+                var connectionTask = ConnectAndStartListeningCore();
 
                 StartBackgroundThreadForSendingMessage();
 
@@ -168,7 +168,7 @@ namespace RxWebSocket
             }
         }
 
-        private async Task ConnectAndStartListeningInternal()
+        private async Task ConnectAndStartListeningCore()
         {
             try
             {

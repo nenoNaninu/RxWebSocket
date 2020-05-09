@@ -80,10 +80,10 @@ namespace RxWebSocket.Senders
             }
         }
 
-        public void SendMessageFromQueue()
+        public void StartSendingMessageFromQueue()
         {
-            _ = SendBinaryMessageFromQueue();
-            _ = SendTextMessageFromQueue();
+            Task.Run(StartSendingBinaryMessageFromQueueInternal).FireAndForget(_logger);
+            Task.Run(StartSendingTextMessageFromQueueInternal).FireAndForget(_logger);
         }
 
         public bool Send(string message)
@@ -229,7 +229,7 @@ namespace RxWebSocket.Senders
         }
 
 
-        private async Task SendBinaryMessageFromQueue()
+        private async Task StartSendingBinaryMessageFromQueueInternal()
         {
             try
             {
@@ -270,7 +270,7 @@ namespace RxWebSocket.Senders
             }
         }
 
-        private async Task SendTextMessageFromQueue()
+        private async Task StartSendingTextMessageFromQueueInternal()
         {
             try
             {

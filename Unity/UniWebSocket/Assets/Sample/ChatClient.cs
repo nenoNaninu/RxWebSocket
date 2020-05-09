@@ -46,7 +46,7 @@ namespace RxWebSocket.Sample
                 .Subscribe(x => _closeSubject.OnNext(x))
                 .AddTo(_disposables);
 
-            _webSocketClient.ExceptionHappened
+            _webSocketClient.ExceptionHappenedInBackground
                 .Subscribe(x =>
                 {
                     _logger?.Log("exception stream...");

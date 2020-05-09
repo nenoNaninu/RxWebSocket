@@ -199,12 +199,12 @@ namespace RxWebSocket.Senders
             throw new WebSocketBadInputException($"Input message (ArraySegment<byte>) of the SendInstant function is null or 0 Length. Please correct it.");
         }
 
-        public void SendMessageFromQueue()
-        {
-            _ = SendMessageFromQueueInternal();
+        public void StartSendingMessageFromQueue()
+        { 
+            Task.Run(StartSendingMessageFromQueueInternal).FireAndForget(_logger);
         }
 
-        public async Task SendMessageFromQueueInternal()
+        public async Task StartSendingMessageFromQueueInternal()
         {
             try
             {

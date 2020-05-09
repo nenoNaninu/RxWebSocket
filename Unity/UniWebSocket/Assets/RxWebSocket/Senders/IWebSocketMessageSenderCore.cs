@@ -15,7 +15,7 @@ namespace RxWebSocket.Senders
 
         IObservable<WebSocketBackgroundException> ExceptionHappenedInSending { get; }
 
-        void SendMessageFromQueue();
+        void StartSendingMessageFromQueue();
 
         void SetLoggingConfig(ILogger logger, string name);
 

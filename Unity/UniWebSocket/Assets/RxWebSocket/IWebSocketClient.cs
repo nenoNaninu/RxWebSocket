@@ -23,7 +23,7 @@ namespace RxWebSocket
         /// </summary>
         IObservable<CloseMessage> CloseMessageReceived { get; }
 
-        IObservable<WebSocketBackgroundException> ExceptionHappened { get; }
+        IObservable<WebSocketBackgroundException> ExceptionHappenedInBackground { get; }
 
         /// <summary>
         /// For logging purpose.

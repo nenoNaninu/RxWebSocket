@@ -98,7 +98,7 @@ namespace RxWebSocket
 
         private void StartBackgroundThreadForSendingMessage()
         {
-            _webSocketMessageSender.SendMessageFromQueue();
+            _webSocketMessageSender.StartSendingMessageFromQueue();
         }
     }
 }
