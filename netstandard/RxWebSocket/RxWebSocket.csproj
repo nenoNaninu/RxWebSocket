@@ -1,31 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
-    <Version>2.0.1</Version>
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
+        <Version>2.0.2</Version>
 
-    <!-- NuGet -->
-    <PackageId>RxWebSocket</PackageId>
-    <Title>RxWebSocket</Title>
-    <PackageVersion>$(Version)</PackageVersion>
-    <Authors>nenoNaninu</Authors>
-    <PackageProjectUrl>https://github.com/nenoNaninu/RxWebSocket</PackageProjectUrl>
-    <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>Rx, Reactive, WebSocket</PackageTags>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Copyright>(c) nenoNaninu</Copyright>
-  </PropertyGroup>
+        <!-- NuGet -->
+        <PackageId>RxWebSocket</PackageId>
+        <Title>RxWebSocket</Title>
+        <PackageVersion>$(Version)</PackageVersion>
+        <Authors>nenoNaninu</Authors>
+        <PackageProjectUrl>https://github.com/nenoNaninu/RxWebSocket</PackageProjectUrl>
+        <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Rx, Reactive, WebSocket</PackageTags>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+        <Copyright>(c) nenoNaninu</Copyright>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" LinkBase="RxWebSocket" />
-    
-    <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\..\Unity\UniWebSocket\Assets\RxWebSocket\**\*.cs" Exclude="..\..\Unity\UniWebSocket\Assets\RxWebSocket\Logging\UnityConsoleLogger.cs" LinkBase="RxWebSocket" />
 
-  <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="4.3.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.0" />
-    <PackageReference Include="System.Threading.Channels" Version="4.7.0" />
-  </ItemGroup>
+        <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Reactive" Version="4.3.2" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.0" />
+        <PackageReference Include="System.Threading.Channels" Version="4.7.0" />
+    </ItemGroup>
 </Project>
