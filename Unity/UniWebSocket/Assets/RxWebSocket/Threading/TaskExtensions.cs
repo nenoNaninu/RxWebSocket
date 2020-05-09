@@ -10,7 +10,7 @@ namespace RxWebSocket.Threading
         {
             try
             {
-                await task;
+                await task.ConfigureAwait(false);
             }
             catch (Exception e)
             {
