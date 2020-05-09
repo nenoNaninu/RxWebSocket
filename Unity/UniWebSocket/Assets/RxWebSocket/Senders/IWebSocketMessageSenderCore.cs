@@ -9,15 +9,13 @@ namespace RxWebSocket.Senders
 {
     internal interface IWebSocketMessageSenderCore : IDisposable
     {
-        Encoding MessageEncoding { get; }
-
         string Name { get; }
 
         IObservable<WebSocketBackgroundException> ExceptionHappenedInSending { get; }
 
         void StartSendingMessageFromQueue();
 
-        void SetLoggingConfig(ILogger logger, string name);
+        void SetConfig(Encoding encoding, ILogger logger, string name);
 
         void SetSocket(WebSocket webSocket);
 

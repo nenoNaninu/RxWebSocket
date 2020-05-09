@@ -87,7 +87,7 @@ namespace RxWebSocket
             _clientFactory = clientFactory ?? MakeDefaultClientFactory();
 
             _webSocketMessageSender = sender?.AsCore() ?? new SingleQueueSenderCore();
-            _webSocketMessageSender.SetLoggingConfig(logger, Name);
+            _webSocketMessageSender.SetConfig(MessageEncoding, logger, Name);
 
             _webSocketMessageSender
                 .ExceptionHappenedInSending
@@ -115,7 +115,7 @@ namespace RxWebSocket
             _memoryPool = new MemoryPool(receiverConfig.InitialMemorySize, receiverConfig.MarginSize, logger);
 
             _webSocketMessageSender = sender?.AsCore() ?? new SingleQueueSenderCore();
-            _webSocketMessageSender.SetLoggingConfig(logger, Name);
+            _webSocketMessageSender.SetConfig(MessageEncoding, logger, Name);
 
             _webSocketMessageSender
                 .ExceptionHappenedInSending

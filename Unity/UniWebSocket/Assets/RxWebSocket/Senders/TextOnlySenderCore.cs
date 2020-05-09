@@ -24,6 +24,7 @@ namespace RxWebSocket.Senders
         private readonly Channel<ArraySegment<byte>> _sentMessageQueue;
         private readonly ChannelReader<ArraySegment<byte>> _sentMessageQueueReader;
         private readonly ChannelWriter<ArraySegment<byte>> _sentMessageQueueWriter;
+        
         private readonly AsyncLock _sendLocker = new AsyncLock();
         private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
         private readonly CancellationTokenSource _stopCancellationTokenSource = new CancellationTokenSource();
@@ -31,12 +32,12 @@ namespace RxWebSocket.Senders
         private WebSocket _socket;
         private ILogger _logger;
         private bool _isStopRequested;
+        private Encoding _messageEncoding;
 
-        public Encoding MessageEncoding { get; } = Encoding.UTF8;
         public bool IsDisposed { get; private set; }
         public string Name { get; private set; } = "CLIENT";
 
-        public bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
+        private bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
 
         public IObservable<WebSocketBackgroundException> ExceptionHappenedInSending => _exceptionSubject.AsObservable();
 
@@ -47,8 +48,9 @@ namespace RxWebSocket.Senders
             _sentMessageQueueWriter = _sentMessageQueue.Writer;
         }
 
-        public void SetLoggingConfig(ILogger logger, string name)
+        public void SetConfig(Encoding encoding, ILogger logger, string name)
         {
+            _messageEncoding = encoding;
             _logger = logger;
             Name = name;
         }
@@ -72,7 +74,7 @@ namespace RxWebSocket.Senders
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
+                return _sentMessageQueueWriter.TryWrite(new ArraySegment<byte>(_messageEncoding.GetBytes(message)));
             }
             else
             {
@@ -141,7 +143,7 @@ namespace RxWebSocket.Senders
         {
             if (ValidationUtils.ValidateInput(message))
             {
-                return SendInternalSynchronized(new ArraySegment<byte>(MessageEncoding.GetBytes(message)));
+                return SendInternalSynchronized(new ArraySegment<byte>(_messageEncoding.GetBytes(message)));
             }
 
             throw new WebSocketBadInputException($"Input message (string) of the SendInstant function is null or empty. Please correct it.");
