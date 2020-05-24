@@ -40,9 +40,6 @@ namespace RxWebSocket
 
         WebSocketState WebSocketState { get; }
 
-        /// <summary>
-        /// Returns currently used native websocket.
-        /// </summary>
         WebSocket NativeSocket { get; }
 
         /// <summary>
@@ -55,7 +52,7 @@ namespace RxWebSocket
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
-        Task ConnectAndStartListening();
+        Task ConnectAsync();
 
         /// <summary>
         /// close websocket connection.

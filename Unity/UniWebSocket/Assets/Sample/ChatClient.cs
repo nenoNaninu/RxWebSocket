@@ -55,7 +55,7 @@ namespace RxWebSocket.Sample
                 })
                 .AddTo(_disposables);
 
-            await _webSocketClient.ConnectAndStartListening();
+            await _webSocketClient.ConnectAsync();
             _webSocketClient.Send(Encoding.UTF8.GetBytes(name));
 
             // for debug code.

@@ -22,7 +22,6 @@ namespace RxWebSocket
 {
     public partial class WebSocketClient : IWebSocketClient
     {
-        #region Member variable with state.
         private readonly ILogger _logger;
 
         private readonly MemoryPool _memoryPool;
@@ -60,7 +59,7 @@ namespace RxWebSocket
         public bool IsListening { get; private set; }
 
         public Task WaitUntilClose { get; private set; }
-        #endregion
+
 
         public WebSocketClient(
             Uri url,
@@ -144,7 +143,7 @@ namespace RxWebSocket
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
-        public async Task ConnectAndStartListening()
+        public async Task ConnectAsync()
         {
             using (await _openLocker.LockAsync().ConfigureAwait(false))
             {
@@ -160,7 +159,7 @@ namespace RxWebSocket
                     throw new ObjectDisposedException("WebSocketClient is already disposed.");
                 }
 
-                var connectionTask = ConnectAndStartListeningCore();
+                var connectionTask = ConnectAsyncCore();
 
                 StartBackgroundThreadForSendingMessage();
 
@@ -168,7 +167,7 @@ namespace RxWebSocket
             }
         }
 
-        private async Task ConnectAndStartListeningCore()
+        private async Task ConnectAsyncCore()
         {
             try
             {
@@ -184,7 +183,7 @@ namespace RxWebSocket
 
                 _logger?.Log(FormatLogMessage("Start Listening..."));
 
-                WaitUntilClose = Listen();
+                WaitUntilClose = Task.Run(Listen);
                 IsListening = true;
                 LastReceivedTime = DateTime.UtcNow;
             }
@@ -207,7 +206,7 @@ namespace RxWebSocket
 
             try
             {
-                _webSocketMessageSender?.Dispose();
+                _webSocketMessageSender.Dispose();
 
                 if (!IsClosed)
                 {
@@ -262,7 +261,7 @@ namespace RxWebSocket
 
                 try
                 {
-                    await _webSocketMessageSender.StopAsync();
+                    await _webSocketMessageSender.StopAsync().ConfigureAwait(false);
 
                     // await until the connection closed.
                     await _socket.CloseAsync(status, statusDescription, _cancellationSocketJobs.Token).ConfigureAwait(false);

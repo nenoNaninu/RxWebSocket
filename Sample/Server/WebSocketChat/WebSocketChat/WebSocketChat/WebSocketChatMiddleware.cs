@@ -37,7 +37,7 @@ namespace WebSocketChat
 
             var rxSocket = new WebSocketClient(socket, logger:_logger.AsWebSocketLogger(), name: name +"_server");
 
-            await rxSocket.ConnectAndStartListening();
+            await rxSocket.ConnectAsync();
 
             var socketWithName = new WebSocketWithName(rxSocket, name);
 

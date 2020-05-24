@@ -210,7 +210,7 @@ namespace RxWebSocket.Senders
         {
             try
             {
-                while (await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
+                while (!_isStopRequested && await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
                     while (!_isStopRequested && _sentMessageQueueReader.TryRead(out var message))
                     {

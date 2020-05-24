@@ -65,14 +65,14 @@ webSocketClient.CloseMessageReceived
     .Subscribe(x => DoSomething(x));
 
 //Issued when an exception occurs in processing of the background thread(receiving and sending). 
-webSocketClient.ExceptionHappened
+webSocketClient.ExceptionHappenedInBackground
     .Subscribe(x => DoSomething(x));
 
 try
 {
     //connect and start listening in background thread.
     //await until websocket can connect.
-    await webSocketClient.ConnectAndStartListening();
+    await webSocketClient.ConnectAsync();
 
     
     //Send() method return bool.
@@ -103,14 +103,14 @@ Microsoft.Extensions.Logging.ILogger<T> logger;
 
 if (!context.WebSockets.IsWebSocketRequest) return;
 
-var socket = await context.WebSockets.AcceptWebSocketAsync();
+WebSocket socket = await context.WebSockets.AcceptWebSocketAsync();
 
 //You can set the connected socket in the constructor.
 using var webSocketClient = new WebSocketClient(socket, logger: logger.AsWebSocketLogger());
 
 // subscribe setting...
 
-await webSocketClient.ConnectAndStartListening();
+await webSocketClient.ConnectAsync();
 
 //If you do not wait, the connection will be disconnected.
 await webSocketClient.WaitUntilClose;

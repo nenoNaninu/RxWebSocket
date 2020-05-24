@@ -51,7 +51,7 @@ namespace RxWebSocket.Sample
             //    })
             //    .AddTo(this);
 
-            await _client.ConnectAndStartListening();
+            await _client.ConnectAsync();
             //_client.Send("はじめまーす");
 
 
