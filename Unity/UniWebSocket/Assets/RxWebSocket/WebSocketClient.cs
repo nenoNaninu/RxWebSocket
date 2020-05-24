@@ -364,6 +364,7 @@ namespace RxWebSocket
                 if (!IsDisposed)
                 {
                     _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Listen));
+                    Dispose();
                 }
             }
         }

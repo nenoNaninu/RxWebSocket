@@ -14,7 +14,10 @@ namespace WebSocketChat
             {
                 foreach (var socket in _webSocketCollection.Values)
                 {
-                    socket.WebSocketClient.CloseAsync(WebSocketCloseStatus.InternalServerError, "press ctrl+c", true).Wait();
+                    if (socket.WebSocketClient.IsOpen)
+                    {
+                        socket.WebSocketClient.CloseAsync(WebSocketCloseStatus.InternalServerError, "press ctrl+c", true).Wait();
+                    }
                 }
             };
         }
