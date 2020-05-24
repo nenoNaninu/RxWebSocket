@@ -95,10 +95,5 @@ namespace RxWebSocket
         {
             return _webSocketMessageSender.SendInstant(ref message, messageType);
         }
-
-        private void StartBackgroundThreadForSendingMessage()
-        {
-            _webSocketMessageSender.StartSendingMessageFromQueue();
-        }
     }
 }

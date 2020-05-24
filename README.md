@@ -3,11 +3,11 @@ RxWebSocket is a WebSocket client for Unity and .NET Standard2.0/2.1. Since Unit
 RxWebSocket is a wrapper of ClientWebSocket for easy handling. RxWebSocket was created with reference to the [websocket-client](https://github.com/Marfusios/websocket-client) (Released under [the MIT License](https://github.com/Marfusios/websocket-client/blob/master/LICENSE)).
 
 # Tested platform(Unity)
-| &nbsp; |  UWP  |  iOS  | Mac OSX Standalone | Windows10 Standalone |
-| ---- | ---- | ---- | ---- | ---- |
-| IL2CPP | ⭕️ | ⭕️ | &nbsp; | &nbsp; |
-| Mono <br>(.NET Standard.0 & .NET 4.x) | &nbsp; | &nbsp; | ⭕️ | ⭕️ |
-| .NET Backend | ❌ | &nbsp; | &nbsp; | &nbsp; |
+| &nbsp; |  UWP  |  iOS  | Android |Mac OSX Standalone | Windows10 Standalone |
+| ---- | ---- | ---- | ---- | ---- |-----|
+| IL2CPP | ⭕️ | ⭕️ | &nbsp; | &nbsp; ||
+| Mono <br>(.NET Standard.0 & .NET 4.x) | &nbsp; | &nbsp; | ⭕️ | ⭕️ | ⭕️|
+| .NET Backend | ❌ | &nbsp; | &nbsp; | &nbsp; | &nbsp;|
 
 # Download
 ## Unity

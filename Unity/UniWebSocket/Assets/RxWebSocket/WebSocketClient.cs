@@ -161,7 +161,7 @@ namespace RxWebSocket
 
                 var connectionTask = ConnectAsyncCore();
 
-                StartBackgroundThreadForSendingMessage();
+                _webSocketMessageSender.StartSendingMessageFromQueue();
 
                 await connectionTask.ConfigureAwait(false);
             }
