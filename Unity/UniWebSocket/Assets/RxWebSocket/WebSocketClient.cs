@@ -90,7 +90,13 @@ namespace RxWebSocket
 
             _webSocketMessageSender
                 .ExceptionHappenedInSending
-                .Subscribe(_exceptionSubject.OnNext);
+                .Subscribe(x =>
+                {
+                    using (this)
+                    {
+                        _exceptionSubject.OnNext(x);
+                    }
+                });
         }
 
         public WebSocketClient(
@@ -118,7 +124,13 @@ namespace RxWebSocket
 
             _webSocketMessageSender
                 .ExceptionHappenedInSending
-                .Subscribe(_exceptionSubject.OnNext);
+                .Subscribe(x =>
+                {
+                    using (this)
+                    {
+                        _exceptionSubject.OnNext(x);
+                    }
+                });
         }
 
         public WebSocket NativeSocket => _socket;
@@ -201,32 +213,38 @@ namespace RxWebSocket
                 return;
             }
 
-            IsDisposed = true;
-            _logger?.Log(FormatLogMessage("Disposing..."));
-
             try
             {
-                _webSocketMessageSender.Dispose();
-
-                if (!IsClosed)
+                using (_exceptionSubject)
+                using (_closeMessageReceivedSubject)
+                using (_textMessageReceivedSubject)
+                using (_binaryMessageReceivedSubject)
+                using (_cancellationSocketJobs)
+                using (_socket)
                 {
-                    _socket?.Abort();
+                    try
+                    {
+                        IsDisposed = true;
+
+                        using (_webSocketMessageSender)
+                        {
+                            _logger?.Log(FormatLogMessage("Disposing..."));
+                        }
+
+                        if (!IsClosed)
+                        {
+                            _socket?.Abort();
+                        }
+                    }
+                    finally
+                    {
+                        _cancellationSocketJobs?.Cancel();
+                    }
                 }
-
-                _socket?.Dispose();
-
-                _cancellationSocketJobs.Cancel();
-                _cancellationSocketJobs.Dispose();
-
-                _binaryMessageReceivedSubject.Dispose();
-                _textMessageReceivedSubject.Dispose();
-                _closeMessageReceivedSubject.Dispose();
-                _exceptionSubject.Dispose();
             }
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
-                throw;
             }
         }
 
@@ -271,7 +289,7 @@ namespace RxWebSocket
 
                     if (dispose)
                     {
-                        this.Dispose();
+                        Dispose();
                     }
                 }
                 catch (Exception e)
@@ -309,14 +327,14 @@ namespace RxWebSocket
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
                         var receivedText = _memoryPool.ToArray();
-                        _logger?.Log(FormatLogMessage($"Received: Type Text: {receivedText}"));
+                        _logger?.Log(FormatLogMessage($"Received: Type Text, binary length: {receivedText.Length}"));
                         _textMessageReceivedSubject.OnNext(receivedText);
                     }
                     else if (result.MessageType == WebSocketMessageType.Binary)
                     {
-                        var dstArray = _memoryPool.ToArray();
-                        _logger?.Log(FormatLogMessage($"Received: Type Binary, length: {dstArray?.Length}"));
-                        _binaryMessageReceivedSubject.OnNext(dstArray);
+                        var receivedData = _memoryPool.ToArray();
+                        _logger?.Log(FormatLogMessage($"Received: Type Binary, binary length: {receivedData.Length}"));
+                        _binaryMessageReceivedSubject.OnNext(receivedData);
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
@@ -336,8 +354,11 @@ namespace RxWebSocket
                                     $"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
                             if (!IsDisposed)
                             {
-                                _exceptionSubject.OnNext(
-                                    new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
+                                using (this)
+                                {
+                                    _exceptionSubject.OnNext(
+                                        new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
+                                }
                             }
                         }
 
@@ -363,8 +384,10 @@ namespace RxWebSocket
                 _logger?.Error(e, FormatLogMessage($"Error while listening to websocket stream, error: '{e.Message}'"));
                 if (!IsDisposed)
                 {
-                    _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Listen));
-                    Dispose();
+                    using (this)
+                    {
+                        _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Listen));
+                    }
                 }
             }
         }
