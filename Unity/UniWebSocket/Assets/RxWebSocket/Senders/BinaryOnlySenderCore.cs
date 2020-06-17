@@ -24,7 +24,7 @@ namespace RxWebSocket.Senders
         private readonly Channel<ArraySegment<byte>> _sentMessageQueue;
         private readonly ChannelReader<ArraySegment<byte>> _sentMessageQueueReader;
         private readonly ChannelWriter<ArraySegment<byte>> _sentMessageQueueWriter;
-        
+
         private readonly AsyncLock _sendLocker = new AsyncLock();
         private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
         private readonly CancellationTokenSource _stopCancellationTokenSource = new CancellationTokenSource();
@@ -272,17 +272,18 @@ namespace RxWebSocket.Senders
         {
             if (!IsDisposed)
             {
-                IsDisposed = true;
-
-                if (!_isStopRequested)
+                using (_stopCancellationTokenSource)
+                using (_exceptionSubject)
                 {
-                    _isStopRequested = true;
-                    _stopCancellationTokenSource.Cancel();
-                    _sentMessageQueueWriter.Complete();
-                }
+                    IsDisposed = true;
 
-                _exceptionSubject.Dispose();
-                _stopCancellationTokenSource.Dispose();
+                    if (!_isStopRequested)
+                    {
+                        _isStopRequested = true;
+                        _stopCancellationTokenSource.Cancel();
+                        _sentMessageQueueWriter.Complete();
+                    }
+                }
             }
         }
 

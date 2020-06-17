@@ -369,18 +369,19 @@ namespace RxWebSocket.Senders
         {
             if (!IsDisposed)
             {
-                IsDisposed = true;
-
-                if (!_isStopRequested)
+                using(_stopCancellationTokenSource)
+                using (_exceptionSubject)
                 {
-                    _isStopRequested = true;
-                    _stopCancellationTokenSource.Cancel();
-                    _binaryMessageQueueWriter.Complete();
-                    _textMessageQueueWriter.Complete();
-                }
+                    IsDisposed = true;
 
-                _exceptionSubject.Dispose();
-                _stopCancellationTokenSource.Dispose();
+                    if (!_isStopRequested)
+                    {
+                        _isStopRequested = true;
+                        _stopCancellationTokenSource.Cancel();
+                        _binaryMessageQueueWriter.Complete();
+                        _textMessageQueueWriter.Complete();
+                    }
+                }
             }
         }
     }

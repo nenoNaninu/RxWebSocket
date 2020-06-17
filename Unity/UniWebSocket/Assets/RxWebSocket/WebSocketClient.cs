@@ -30,6 +30,7 @@ namespace RxWebSocket
 
         private readonly AsyncLock _openLocker = new AsyncLock();
         private readonly AsyncLock _closeLocker = new AsyncLock();
+        private readonly object _disposeLocker = new object();
 
         private readonly Subject<byte[]> _binaryMessageReceivedSubject = new Subject<byte[]>();
         private readonly Subject<byte[]> _textMessageReceivedSubject = new Subject<byte[]>();
@@ -213,38 +214,53 @@ namespace RxWebSocket
                 return;
             }
 
-            try
+            lock (_disposeLocker)
             {
-                using (_exceptionSubject)
-                using (_closeMessageReceivedSubject)
-                using (_textMessageReceivedSubject)
-                using (_binaryMessageReceivedSubject)
-                using (_cancellationSocketJobs)
-                using (_socket)
+                if (IsDisposed)
                 {
-                    try
-                    {
-                        IsDisposed = true;
+                    return;
+                }
 
-                        using (_webSocketMessageSender)
-                        {
-                            _logger?.Log(FormatLogMessage("Disposing..."));
-                        }
-
-                        if (!IsClosed)
-                        {
-                            _socket?.Abort();
-                        }
-                    }
-                    finally
+                try
+                {
+                    using (_exceptionSubject)
+                    using (_closeMessageReceivedSubject)
+                    using (_textMessageReceivedSubject)
+                    using (_binaryMessageReceivedSubject)
+                    using (_cancellationSocketJobs)
+                    using (_socket)
                     {
-                        _cancellationSocketJobs?.Cancel();
+                        try
+                        {
+                            using (_webSocketMessageSender)
+                            {
+                                IsDisposed = true;
+                                _logger?.Log(FormatLogMessage("Disposing..."));
+                            }
+
+                            if (!IsClosed)
+                            {
+                                _socket?.Abort();
+                            }
+
+                            _binaryMessageReceivedSubject.OnCompleted();
+                            _textMessageReceivedSubject.OnCompleted();
+                            _closeMessageReceivedSubject.OnCompleted();
+                            _exceptionSubject.OnCompleted();
+                        }
+                        finally
+                        {
+                            if (!_cancellationSocketJobs.IsCancellationRequested)
+                            {
+                                _cancellationSocketJobs.Cancel();
+                            }
+                        }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
+                catch (Exception e)
+                {
+                    _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
+                }
             }
         }
 
@@ -282,20 +298,23 @@ namespace RxWebSocket
                     await _webSocketMessageSender.StopAsync().ConfigureAwait(false);
 
                     // await until the connection closed.
-                    await _socket.CloseAsync(status, statusDescription, _cancellationSocketJobs.Token).ConfigureAwait(false);
+                    await _socket.CloseAsync(status, statusDescription, _cancellationSocketJobs.Token)
+                        .ConfigureAwait(false);
                     IsListening = false;
 
                     _cancellationSocketJobs.Cancel();
-
-                    if (dispose)
-                    {
-                        Dispose();
-                    }
                 }
                 catch (Exception e)
                 {
                     _logger?.Error(e, FormatLogMessage($"Error while closing client, message: '{e.Message}'"));
                     throw;
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        Dispose();
+                    }
                 }
             }
         }
