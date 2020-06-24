@@ -43,6 +43,7 @@ namespace RxWebSocket
         private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
 
         private WebSocket _socket;
+        private Task _listenTask;
 
         public Uri Url { get; }
 
@@ -58,9 +59,6 @@ namespace RxWebSocket
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
         public bool IsListening { get; private set; }
-
-        public Task WaitUntilClose { get; private set; }
-
 
         public WebSocketClient(
             Uri url,
@@ -196,7 +194,7 @@ namespace RxWebSocket
 
                 _logger?.Log(FormatLogMessage("Start Listening..."));
 
-                WaitUntilClose = Task.Run(Listen);
+                _listenTask = Task.Run(Listen);
                 IsListening = true;
                 LastReceivedTime = DateTime.UtcNow;
             }
@@ -409,6 +407,16 @@ namespace RxWebSocket
                     }
                 }
             }
+        }
+        
+        public Task WaitUntilCloseAsync()
+        {
+            if (_listenTask != null)
+            {
+                return _listenTask;
+            }
+            
+            throw new RxWebSocket.Exceptions.WebSocketException("Call ConnectAsync() before calling this function.");
         }
 
         private string FormatLogMessage(string msg)

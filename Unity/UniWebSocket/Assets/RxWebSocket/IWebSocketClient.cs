@@ -47,8 +47,6 @@ namespace RxWebSocket
         /// </summary>
         Encoding MessageEncoding { get; }
 
-        Task WaitUntilClose { get; }
-
         /// <summary>
         /// Start connect and listening to the websocket stream on the background thread
         /// </summary>
@@ -63,6 +61,8 @@ namespace RxWebSocket
         /// close websocket connection.
         /// </summary>
         Task CloseAsync(WebSocketCloseStatus status, string statusDescription);
+
+        Task WaitUntilCloseAsync();
 
         /// <summary>
         /// Send text message to the websocket channel. 
