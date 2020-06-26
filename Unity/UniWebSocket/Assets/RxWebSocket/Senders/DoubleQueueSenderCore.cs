@@ -83,8 +83,8 @@ namespace RxWebSocket.Senders
 
         public void StartSendingMessageFromQueue()
         {
-            Task.Run(StartSendingBinaryMessageFromQueueInternal).FireAndForget(_logger);
-            Task.Run(StartSendingTextMessageFromQueueInternal).FireAndForget(_logger);
+            Task.Run(StartSendingBinaryMessageFromQueueInternal).Forget(_logger);
+            Task.Run(StartSendingTextMessageFromQueueInternal).Forget(_logger);
         }
 
         public bool Send(string message)

@@ -82,7 +82,7 @@ namespace RxWebSocket
             receiverConfig = receiverConfig ?? ReceiverMemoryConfig.Default; //cannot use =?? in unity
             _memoryPool = new MemoryPool(receiverConfig.InitialMemorySize, receiverConfig.MarginSize, logger);
 
-            _clientFactory = clientFactory ?? MakeDefaultClientFactory();
+            _clientFactory = clientFactory ?? DefaultClientFactory;
 
             _webSocketMessageSender = sender?.AsCore() ?? new SingleQueueSenderCore();
             _webSocketMessageSender.SetConfig(MessageEncoding, logger, Name);
@@ -408,14 +408,14 @@ namespace RxWebSocket
                 }
             }
         }
-        
+
         public Task WaitUntilCloseAsync()
         {
             if (_listenTask != null)
             {
                 return _listenTask;
             }
-            
+
             throw new RxWebSocket.Exceptions.WebSocketException("Call ConnectAsync() before calling this function.");
         }
 
@@ -424,12 +424,9 @@ namespace RxWebSocket
             return $"[WEBSOCKET {Name}] {msg}";
         }
 
-        private static Func<ClientWebSocket> MakeDefaultClientFactory()
+        private static readonly Func<ClientWebSocket> DefaultClientFactory = () => new ClientWebSocket
         {
-            return () => new ClientWebSocket
-            {
-                Options = { KeepAliveInterval = TimeSpan.FromSeconds(5) }
-            };
-        }
+            Options = { KeepAliveInterval = TimeSpan.FromSeconds(5) }
+        };
     }
 }

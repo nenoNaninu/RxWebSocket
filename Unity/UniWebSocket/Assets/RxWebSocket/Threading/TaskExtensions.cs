@@ -6,7 +6,7 @@ namespace RxWebSocket.Threading
 {
     internal static class TaskExtensions
     {
-        internal static async void FireAndForget(this Task task, ILogger logger)
+        internal static async void Forget(this Task task, ILogger logger)
         {
             try
             {

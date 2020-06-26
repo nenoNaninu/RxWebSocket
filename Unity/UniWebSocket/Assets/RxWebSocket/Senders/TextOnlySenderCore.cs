@@ -203,7 +203,7 @@ namespace RxWebSocket.Senders
 
         public void StartSendingMessageFromQueue()
         { 
-            Task.Run(StartSendingMessageFromQueueInternal).FireAndForget(_logger);
+            Task.Run(StartSendingMessageFromQueueInternal).Forget(_logger);
         }
 
         public async Task StartSendingMessageFromQueueInternal()
