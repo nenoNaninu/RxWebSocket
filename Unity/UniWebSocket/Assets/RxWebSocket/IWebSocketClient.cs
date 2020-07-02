@@ -5,6 +5,12 @@ using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Message;
 
+#if NETSTANDARD2_1 || NETSTANDARD2_0
+using System.Reactive;
+#else
+using UniRx;
+#endif
+
 namespace RxWebSocket
 {
     public interface IWebSocketClient : IDisposable
@@ -19,11 +25,13 @@ namespace RxWebSocket
 
         /// <summary>
         /// Invoke when a close message is received,
-        /// before disconnecting the connection in normal system.
+        /// before disconnecting the connection.
         /// </summary>
         IObservable<CloseMessage> CloseMessageReceived { get; }
 
         IObservable<WebSocketBackgroundException> ExceptionHappenedInBackground { get; }
+
+        IObservable<Unit> OnDispose { get; }
 
         /// <summary>
         /// For logging purpose.

@@ -12,6 +12,7 @@ using RxWebSocket.Senders;
 using RxWebSocket.Utils;
 
 #if NETSTANDARD2_1 || NETSTANDARD2_0
+using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
 #else
@@ -37,6 +38,7 @@ namespace RxWebSocket
 
         private readonly Subject<CloseMessage> _closeMessageReceivedSubject = new Subject<CloseMessage>();
         private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
+        private readonly Subject<Unit> _onDisposeSubject = new Subject<Unit>();
 
         private readonly CancellationTokenSource _cancellationSocketJobs = new CancellationTokenSource();
 
@@ -47,9 +49,7 @@ namespace RxWebSocket
 
         public Uri Url { get; }
 
-        /// <summary>
-        /// For logging purpose.
-        /// </summary>
+        ///<inheritdoc/>
         public string Name { get; }
 
         public Encoding MessageEncoding { get; }
@@ -143,17 +143,17 @@ namespace RxWebSocket
 
         public IObservable<byte[]> RawTextMessageReceived => _textMessageReceivedSubject.AsObservable();
 
-        public IObservable<string> TextMessageReceived => RawTextMessageReceived.Select(MessageEncoding.GetString);
+        public IObservable<string> TextMessageReceived => _textMessageReceivedSubject.Select(MessageEncoding.GetString);
 
-        /// Invoke when a close message is received,
-        /// before disconnecting the connection in normal system.
+        public IObservable<Unit> OnDispose => _onDisposeSubject.AsObservable();
+
+        ///<inheritdoc/>
         public IObservable<CloseMessage> CloseMessageReceived => _closeMessageReceivedSubject.AsObservable();
 
         public IObservable<WebSocketBackgroundException> ExceptionHappenedInBackground => _exceptionSubject.AsObservable();
 
-        /// <summary>
-        /// Start connect and listening to the websocket stream on the background thread
-        /// </summary>
+
+        ///<inheritdoc/>
         public async Task ConnectAsync()
         {
             using (await _openLocker.LockAsync().ConfigureAwait(false))
@@ -221,6 +221,7 @@ namespace RxWebSocket
 
                 try
                 {
+                    using (_onDisposeSubject)
                     using (_exceptionSubject)
                     using (_closeMessageReceivedSubject)
                     using (_textMessageReceivedSubject)
@@ -248,31 +249,46 @@ namespace RxWebSocket
                         }
                         finally
                         {
-                            if (!_cancellationSocketJobs.IsCancellationRequested)
+                            try
                             {
-                                _cancellationSocketJobs.Cancel();
+                                if (!_cancellationSocketJobs.IsCancellationRequested)
+                                {
+                                    _cancellationSocketJobs.Cancel();
+                                }
                             }
+                            catch
+                            {
+                                // ignored
+                            }
+                        }
+
+                        try
+                        {
+                            _onDisposeSubject.OnNext(Unit.Default);
+                            _onDisposeSubject.OnCompleted();
+                        }
+                        catch (Exception e)
+                        {
+                            _logger?.Error(e, FormatLogMessage($"An exception occurred in OnDispose.OnNext() or OnCompleted() : {e.Message}"));
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error: {e.Message}"));
+                    _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error : {e.Message}"));
                 }
             }
         }
 
-        /// <summary>
-        /// close websocket connection.
-        /// </summary>
+
+        ///<inheritdoc/>
         public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
         }
 
-        /// <summary>
-        /// close websocket connection.
-        /// </summary>
+
+        ///<inheritdoc/>
         public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
         {
             // prevent sending multiple disconnect requests.
@@ -304,7 +320,7 @@ namespace RxWebSocket
                 }
                 catch (Exception e)
                 {
-                    _logger?.Error(e, FormatLogMessage($"Error while closing client, message: '{e.Message}'"));
+                    _logger?.Error(e, FormatLogMessage($"Error while closing client, message : '{e.Message}'"));
                     throw;
                 }
                 finally

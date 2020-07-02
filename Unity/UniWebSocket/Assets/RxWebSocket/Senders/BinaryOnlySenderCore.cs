@@ -280,7 +280,15 @@ namespace RxWebSocket.Senders
                     if (!_isStopRequested)
                     {
                         _isStopRequested = true;
-                        _stopCancellationTokenSource.Cancel();
+                        try
+                        {
+                            _stopCancellationTokenSource.Cancel();
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+
                         _sentMessageQueueWriter.Complete();
                     }
                 }
