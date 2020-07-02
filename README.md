@@ -65,7 +65,7 @@ webSocketClient.CloseMessageReceived
     .Subscribe(x => DoSomething(x));
 
 webSocketClient.OnDispose
-    .Subscribe(_ => DoSomething(x));
+    .Subscribe(_ => DoSomething());
 
 //Issued when an exception occurs in processing of the background thread(receiving and sending). 
 webSocketClient.ExceptionHappenedInBackground
