@@ -37,7 +37,7 @@ namespace RxWebSocket.Senders
         private ILogger _logger;
         private Encoding _messageEncoding;
 
-        private int _isStopRequested;
+        private int _isStopRequested = 0;
         private int _isDisposed = 0;
 
         public bool IsDisposed => 0 < _isDisposed;
