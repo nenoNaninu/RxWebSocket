@@ -208,7 +208,6 @@ namespace RxWebSocket
 
         public void Dispose()
         {
-
             if (Interlocked.Increment(ref _isDisposed) != 1)
             {
                 return;
@@ -273,13 +272,11 @@ namespace RxWebSocket
             }
         }
 
-
         ///<inheritdoc/>
         public Task CloseAsync(WebSocketCloseStatus status, string statusDescription)
         {
             return CloseAsync(status, statusDescription, true);
         }
-
 
         ///<inheritdoc/>
         public async Task CloseAsync(WebSocketCloseStatus status, string statusDescription, bool dispose)
