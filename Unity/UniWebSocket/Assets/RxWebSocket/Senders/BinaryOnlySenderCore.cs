@@ -32,8 +32,8 @@ namespace RxWebSocket.Senders
         private WebSocket _socket;
         private ILogger _logger;
         private Encoding _messageEncoding;
-        
-        private bool _isStopRequested;
+
+        private int _isStopRequested;
         private int _isDisposed = 0;
 
         public bool IsDisposed => 0 < _isDisposed;
@@ -66,9 +66,19 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                _isStopRequested = true;
-                _stopCancellationTokenSource.Cancel();
-                _sentMessageQueueWriter.Complete();
+                if (Interlocked.Increment(ref _isStopRequested) == 1)
+                {
+                    try
+                    {
+                        _stopCancellationTokenSource.Cancel();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    _sentMessageQueueWriter.Complete();
+                }
             }
         }
 
@@ -209,9 +219,9 @@ namespace RxWebSocket.Senders
         {
             try
             {
-                while (!_isStopRequested && await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
+                while (_isStopRequested == 0 && await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_isStopRequested && _sentMessageQueueReader.TryRead(out var message))
+                    while (_isStopRequested == 0 && _sentMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -251,7 +261,7 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_isStopRequested)
+                if (_isStopRequested != 0)
                 {
                     return;
                 }
@@ -277,9 +287,8 @@ namespace RxWebSocket.Senders
                 using (_stopCancellationTokenSource)
                 using (_exceptionSubject)
                 {
-                    if (!_isStopRequested)
+                    if (Interlocked.Increment(ref _isStopRequested) == 1)
                     {
-                        _isStopRequested = true;
                         try
                         {
                             _stopCancellationTokenSource.Cancel();

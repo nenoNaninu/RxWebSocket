@@ -36,8 +36,8 @@ namespace RxWebSocket.Senders
         private WebSocket _socket;
         private ILogger _logger;
         private Encoding _messageEncoding;
-        
-        private bool _isStopRequested;
+
+        private int _isStopRequested;
         private int _isDisposed = 0;
 
         public bool IsDisposed => 0 < _isDisposed;
@@ -76,10 +76,20 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                _isStopRequested = true;
-                _stopCancellationTokenSource.Cancel();
-                _binaryMessageQueueWriter.Complete();
-                _textMessageQueueWriter.Complete();
+                if (Interlocked.Increment(ref _isStopRequested) == 1)
+                {
+                    try
+                    {
+                        _stopCancellationTokenSource.Cancel();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    _binaryMessageQueueWriter.Complete();
+                    _textMessageQueueWriter.Complete();
+                }
             }
         }
 
@@ -238,7 +248,7 @@ namespace RxWebSocket.Senders
             {
                 while (await _binaryMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_isStopRequested && _binaryMessageQueueReader.TryRead(out var message))
+                    while (_isStopRequested == 0 && _binaryMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -277,9 +287,9 @@ namespace RxWebSocket.Senders
         {
             try
             {
-                while (!_isStopRequested && await _textMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
+                while (_isStopRequested == 0 && await _textMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_isStopRequested && _textMessageQueueReader.TryRead(out var message))
+                    while (_isStopRequested == 0 && _textMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -319,7 +329,7 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_isStopRequested)
+                if (_isStopRequested != 0)
                 {
                     return;
                 }
@@ -343,7 +353,7 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_isStopRequested)
+                if (_isStopRequested != 0)
                 {
                     return;
                 }
@@ -362,21 +372,15 @@ namespace RxWebSocket.Senders
             }
         }
 
-        private string FormatLogMessage(string msg)
-        {
-            return $"[WEBSOCKET {Name}] {msg}";
-        }
-
         public void Dispose()
         {
             if (Interlocked.Increment(ref _isDisposed) == 1)
             {
-                using(_stopCancellationTokenSource)
+                using (_stopCancellationTokenSource)
                 using (_exceptionSubject)
                 {
-                    if (!_isStopRequested)
+                    if (Interlocked.Increment(ref _isStopRequested) == 1)
                     {
-                        _isStopRequested = true;
                         try
                         {
                             _stopCancellationTokenSource.Cancel();
@@ -390,6 +394,11 @@ namespace RxWebSocket.Senders
                     }
                 }
             }
+        }
+
+        private string FormatLogMessage(string msg)
+        {
+            return $"[WEBSOCKET {Name}] {msg}";
         }
     }
 }

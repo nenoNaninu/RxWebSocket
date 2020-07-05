@@ -25,7 +25,7 @@ namespace RxWebSocket.Senders
         private readonly Channel<SentMessage> _sentMessageQueue;
         private readonly ChannelReader<SentMessage> _sentMessageQueueReader;
         private readonly ChannelWriter<SentMessage> _sentMessageQueueWriter;
-        
+
         private readonly AsyncLock _sendLocker = new AsyncLock();
         private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
         private readonly CancellationTokenSource _stopCancellationTokenSource = new CancellationTokenSource();
@@ -34,7 +34,7 @@ namespace RxWebSocket.Senders
         private ILogger _logger;
         private Encoding _messageEncoding;
 
-        private bool _isStopRequested;
+        private int _isStopRequested = 0;
         private int _isDisposed = 0;
 
         public bool IsDisposed => 0 < _isDisposed;
@@ -67,9 +67,19 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                _isStopRequested = true;
-                _stopCancellationTokenSource.Cancel();
-                _sentMessageQueueWriter.Complete();
+                if (Interlocked.Increment(ref _isStopRequested) == 1)
+                {
+                    try
+                    {
+                        _stopCancellationTokenSource.Cancel();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    _sentMessageQueueWriter.Complete();
+                }
             }
         }
 
@@ -192,9 +202,9 @@ namespace RxWebSocket.Senders
         {
             try
             {
-                while (!_isStopRequested && await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
+                while (_isStopRequested == 0 && await _sentMessageQueueReader.WaitToReadAsync(_stopCancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    while (!_isStopRequested && _sentMessageQueueReader.TryRead(out var message))
+                    while (_isStopRequested == 0 && _sentMessageQueueReader.TryRead(out var message))
                     {
                         try
                         {
@@ -234,7 +244,7 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (_isStopRequested)
+                if (_isStopRequested != 0)
                 {
                     return;
                 }
@@ -257,12 +267,11 @@ namespace RxWebSocket.Senders
         {
             if (Interlocked.Increment(ref _isDisposed) == 1)
             {
-                using(_stopCancellationTokenSource)
+                using (_stopCancellationTokenSource)
                 using (_exceptionSubject)
                 {
-                    if (!_isStopRequested)
+                    if (Interlocked.Increment(ref _isStopRequested) == 1)
                     {
-                        _isStopRequested = true;
                         try
                         {
                             _stopCancellationTokenSource.Cancel();
