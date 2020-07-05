@@ -31,7 +31,6 @@ namespace RxWebSocket
 
         private readonly AsyncLock _openLocker = new AsyncLock();
         private readonly AsyncLock _closeLocker = new AsyncLock();
-        private readonly object _disposeLocker = new object();
 
         private readonly Subject<byte[]> _binaryMessageReceivedSubject = new Subject<byte[]>();
         private readonly Subject<byte[]> _textMessageReceivedSubject = new Subject<byte[]>();
@@ -44,6 +43,8 @@ namespace RxWebSocket
 
         private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
 
+        private int _isDisposed = 0;
+
         private WebSocket _socket;
         private Task _listenTask;
 
@@ -53,8 +54,6 @@ namespace RxWebSocket
         public string Name { get; }
 
         public Encoding MessageEncoding { get; }
-
-        public bool IsDisposed { get; private set; }
 
         public DateTime LastReceivedTime { get; private set; } = DateTime.UtcNow;
 
@@ -139,6 +138,8 @@ namespace RxWebSocket
 
         public WebSocketState WebSocketState => _socket?.State ?? WebSocketState.None;
 
+        public bool IsDisposed => 0 < _isDisposed;
+
         public IObservable<byte[]> BinaryMessageReceived => _binaryMessageReceivedSubject.AsObservable();
 
         public IObservable<byte[]> RawTextMessageReceived => _textMessageReceivedSubject.AsObservable();
@@ -207,76 +208,68 @@ namespace RxWebSocket
 
         public void Dispose()
         {
-            if (IsDisposed)
+
+            if (Interlocked.Increment(ref _isDisposed) != 1)
             {
                 return;
             }
 
-            lock (_disposeLocker)
+            try
             {
-                if (IsDisposed)
+                using (_onDisposeSubject)
+                using (_exceptionSubject)
+                using (_closeMessageReceivedSubject)
+                using (_textMessageReceivedSubject)
+                using (_binaryMessageReceivedSubject)
+                using (_cancellationSocketJobs)
+                using (_socket)
                 {
-                    return;
-                }
+                    try
+                    {
+                        using (_webSocketMessageSender)
+                        {
+                            _logger?.Log(FormatLogMessage("Disposing..."));
+                        }
 
-                try
-                {
-                    using (_onDisposeSubject)
-                    using (_exceptionSubject)
-                    using (_closeMessageReceivedSubject)
-                    using (_textMessageReceivedSubject)
-                    using (_binaryMessageReceivedSubject)
-                    using (_cancellationSocketJobs)
-                    using (_socket)
+                        if (!IsClosed)
+                        {
+                            _socket?.Abort();
+                        }
+
+                        _binaryMessageReceivedSubject.OnCompleted();
+                        _textMessageReceivedSubject.OnCompleted();
+                        _closeMessageReceivedSubject.OnCompleted();
+                        _exceptionSubject.OnCompleted();
+                    }
+                    finally
                     {
                         try
                         {
-                            using (_webSocketMessageSender)
+                            if (!_cancellationSocketJobs.IsCancellationRequested)
                             {
-                                IsDisposed = true;
-                                _logger?.Log(FormatLogMessage("Disposing..."));
-                            }
-
-                            if (!IsClosed)
-                            {
-                                _socket?.Abort();
-                            }
-
-                            _binaryMessageReceivedSubject.OnCompleted();
-                            _textMessageReceivedSubject.OnCompleted();
-                            _closeMessageReceivedSubject.OnCompleted();
-                            _exceptionSubject.OnCompleted();
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                if (!_cancellationSocketJobs.IsCancellationRequested)
-                                {
-                                    _cancellationSocketJobs.Cancel();
-                                }
-                            }
-                            catch
-                            {
-                                // ignored
+                                _cancellationSocketJobs.Cancel();
                             }
                         }
-
-                        try
+                        catch
                         {
-                            _onDisposeSubject.OnNext(Unit.Default);
-                            _onDisposeSubject.OnCompleted();
-                        }
-                        catch (Exception e)
-                        {
-                            _logger?.Error(e, FormatLogMessage($"An exception occurred in OnDispose.OnNext() or OnCompleted() : {e.Message}"));
+                            // ignored
                         }
                     }
+
+                    try
+                    {
+                        _onDisposeSubject.OnNext(Unit.Default);
+                        _onDisposeSubject.OnCompleted();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger?.Error(e, FormatLogMessage($"An exception occurred in OnDispose.OnNext() or OnCompleted() : {e.Message}"));
+                    }
                 }
-                catch (Exception e)
-                {
-                    _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error : {e.Message}"));
-                }
+            }
+            catch (Exception e)
+            {
+                _logger?.Error(e, FormatLogMessage($"Failed to dispose client, error : {e.Message}"));
             }
         }
 
