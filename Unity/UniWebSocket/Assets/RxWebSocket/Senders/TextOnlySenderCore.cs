@@ -300,6 +300,7 @@ namespace RxWebSocket.Senders
                         {
                             // ignored
                         }
+
                         _sentMessageQueueWriter.Complete();
                     }
                 }

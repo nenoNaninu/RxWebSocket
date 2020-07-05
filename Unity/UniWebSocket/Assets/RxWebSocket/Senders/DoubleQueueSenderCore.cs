@@ -389,6 +389,7 @@ namespace RxWebSocket.Senders
                         {
                             // ignored
                         }
+
                         _binaryMessageQueueWriter.Complete();
                         _textMessageQueueWriter.Complete();
                     }
