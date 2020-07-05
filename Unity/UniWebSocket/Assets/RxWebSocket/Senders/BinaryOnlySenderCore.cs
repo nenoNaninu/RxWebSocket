@@ -31,13 +31,15 @@ namespace RxWebSocket.Senders
 
         private WebSocket _socket;
         private ILogger _logger;
-        private bool _isStopRequested;
         private Encoding _messageEncoding;
+        
+        private bool _isStopRequested;
+        private int _isDisposed = 0;
 
-        public bool IsDisposed { get; private set; }
-        public string Name { get; private set; } = "CLIENT";
-
+        public bool IsDisposed => 0 < _isDisposed;
         private bool IsOpen => _socket != null && _socket.State == WebSocketState.Open;
+
+        public string Name { get; private set; } = "CLIENT";
 
         public IObservable<WebSocketBackgroundException> ExceptionHappenedInSending => _exceptionSubject.AsObservable();
 
@@ -270,13 +272,11 @@ namespace RxWebSocket.Senders
 
         public void Dispose()
         {
-            if (!IsDisposed)
+            if (Interlocked.Increment(ref _isDisposed) == 1)
             {
                 using (_stopCancellationTokenSource)
                 using (_exceptionSubject)
                 {
-                    IsDisposed = true;
-
                     if (!_isStopRequested)
                     {
                         _isStopRequested = true;
