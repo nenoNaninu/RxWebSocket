@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Logging;
 using RxWebSocket.Threading;
+using RxWebSocket.Utils;
 using RxWebSocket.Validations;
 
 #if NETSTANDARD2_1 || NETSTANDARD2_0
@@ -66,32 +67,23 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (Interlocked.Increment(ref _isStopRequested) == 1)
-                {
-                    try
-                    {
-                        _stopCancellationTokenSource.Cancel();
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                StopCore();
+            }
+        }
 
-                    _sentMessageQueueWriter.Complete();
-                }
+        private void StopCore()
+        {
+            if (Interlocked.Increment(ref _isStopRequested) == 1)
+            {
+                _stopCancellationTokenSource.CancelWithoutException();
+
+                _sentMessageQueueWriter.TryComplete();
             }
         }
 
         public bool Send(string message)
         {
-            if (ValidationUtils.ValidateInput(message))
-            {
-                throw new NotImplementedException("BinaryOnlySender cannot send string.");
-            }
-            else
-            {
-                throw new WebSocketBadInputException($"Input message (string) of the Send function is null or empty. Please correct it.");
-            }
+            throw new NotImplementedException("BinaryOnlySender cannot send string.");
         }
 
         public bool Send(byte[] message)
@@ -287,19 +279,7 @@ namespace RxWebSocket.Senders
                 using (_stopCancellationTokenSource)
                 using (_exceptionSubject)
                 {
-                    if (Interlocked.Increment(ref _isStopRequested) == 1)
-                    {
-                        try
-                        {
-                            _stopCancellationTokenSource.Cancel();
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-
-                        _sentMessageQueueWriter.Complete();
-                    }
+                    StopCore();
                 }
             }
         }

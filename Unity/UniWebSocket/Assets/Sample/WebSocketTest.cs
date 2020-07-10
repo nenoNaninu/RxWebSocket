@@ -17,32 +17,32 @@ namespace RxWebSocket.Sample
         //async 
             void Start()
             {
-                Observable.Timer(TimeSpan.FromSeconds(5))
-                    .Subscribe(x =>
-                    {
-                        try
-                        {
-                            var subject = new Subject<Unit>();
-                            subject.Subscribe(
-                                _ =>
-                                {
-                                    Debug.Log("叩かれた : on next");
-                                    throw new Exception("OnNextの中でエラー");
-                                },
-                                e => Debug.Log("on error!!!!!" + e.Message),
-                                () =>
-                                {
-                                    Debug.Log("叩かれた : OnCompleted");
-                                    throw new Exception("OnCompletedの中でエラー");
-                                });
-                            subject.OnNext(Unit.Default);
-                            subject.OnCompleted();
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogWarning(e.Message);
-                        }
-                    });
+                //Observable.Timer(TimeSpan.FromSeconds(5))
+                //    .Subscribe(x =>
+                //    {
+                //        try
+                //        {
+                //            var subject = new Subject<Unit>();
+                //            subject.Subscribe(
+                //                _ =>
+                //                {
+                //                    Debug.Log("叩かれた : on next");
+                //                    throw new Exception("OnNextの中でエラー");
+                //                },
+                //                e => Debug.Log("on error!!!!!" + e.Message),
+                //                () =>
+                //                {
+                //                    Debug.Log("叩かれた : OnCompleted");
+                //                    throw new Exception("OnCompletedの中でエラー");
+                //                });
+                //            subject.OnNext(Unit.Default);
+                //            subject.OnCompleted();
+                //        }
+                //        catch (Exception e)
+                //        {
+                //            Debug.LogWarning(e.Message);
+                //        }
+                //    });
 
                 //return;
 

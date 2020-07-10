@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Logging;
 using RxWebSocket.Threading;
+using RxWebSocket.Utils;
 using RxWebSocket.Validations;
 
 #if NETSTANDARD2_1 || NETSTANDARD2_0
@@ -24,7 +25,7 @@ namespace RxWebSocket.Senders
         private readonly Channel<ArraySegment<byte>> _sentMessageQueue;
         private readonly ChannelReader<ArraySegment<byte>> _sentMessageQueueReader;
         private readonly ChannelWriter<ArraySegment<byte>> _sentMessageQueueWriter;
-        
+
         private readonly AsyncLock _sendLocker = new AsyncLock();
         private readonly Subject<WebSocketBackgroundException> _exceptionSubject = new Subject<WebSocketBackgroundException>();
         private readonly CancellationTokenSource _stopCancellationTokenSource = new CancellationTokenSource();
@@ -66,19 +67,17 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (Interlocked.Increment(ref _isStopRequested) == 1)
-                {
-                    try
-                    {
-                        _stopCancellationTokenSource.Cancel();
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                StopCore();
+            }
+        }
 
-                    _sentMessageQueueWriter.Complete();
-                }
+        private void StopCore()
+        {
+            if (Interlocked.Increment(ref _isStopRequested) == 1)
+            {
+                _stopCancellationTokenSource.CancelWithoutException();
+
+                _sentMessageQueueWriter.TryComplete();
             }
         }
 
@@ -214,7 +213,7 @@ namespace RxWebSocket.Senders
         }
 
         public void StartSendingMessageFromQueue()
-        { 
+        {
             Task.Run(StartSendingMessageFromQueueInternal).Forget(_logger);
         }
 
@@ -287,22 +286,10 @@ namespace RxWebSocket.Senders
         {
             if (Interlocked.Increment(ref _isDisposed) == 1)
             {
-                using(_stopCancellationTokenSource)
+                using (_stopCancellationTokenSource)
                 using (_exceptionSubject)
                 {
-                    if (Interlocked.Increment(ref _isStopRequested) == 1)
-                    {
-                        try
-                        {
-                            _stopCancellationTokenSource.Cancel();
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-
-                        _sentMessageQueueWriter.Complete();
-                    }
+                    StopCore();
                 }
             }
         }

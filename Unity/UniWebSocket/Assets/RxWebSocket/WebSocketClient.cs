@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -40,6 +41,8 @@ namespace RxWebSocket
         private readonly Subject<Unit> _onDisposeSubject = new Subject<Unit>();
 
         private readonly CancellationTokenSource _cancellationSocketJobs = new CancellationTokenSource();
+
+        private readonly ConcurrentQueue<WebSocketBackgroundException> _backgroundExceptionQueue = new ConcurrentQueue<WebSocketBackgroundException>();
 
         private readonly IWebSocketMessageSenderCore _webSocketMessageSender;
 
@@ -90,10 +93,8 @@ namespace RxWebSocket
                 .ExceptionHappenedInSending
                 .Subscribe(x =>
                 {
-                    using (this)
-                    {
-                        _exceptionSubject.OnNext(x);
-                    }
+                    _backgroundExceptionQueue.Enqueue(x);
+                    Dispose();
                 });
         }
 
@@ -124,10 +125,8 @@ namespace RxWebSocket
                 .ExceptionHappenedInSending
                 .Subscribe(x =>
                 {
-                    using (this)
-                    {
-                        _exceptionSubject.OnNext(x);
-                    }
+                    _backgroundExceptionQueue.Enqueue(x);
+                    Dispose();
                 });
         }
 
@@ -223,31 +222,15 @@ namespace RxWebSocket
                 using (_cancellationSocketJobs)
                 using (_socket)
                 {
-                    try
-                    {
-                        using (_webSocketMessageSender)
-                        {
-                            _logger?.Log(FormatLogMessage("Disposing..."));
-                        }
+                    _logger?.Log(FormatLogMessage("Disposing..."));
 
-                        if (!IsClosed)
-                        {
-                            _socket?.Abort();
-                        }
+                    _webSocketMessageSender.Dispose();
 
-                        _binaryMessageReceivedSubject.OnCompleted();
-                        _textMessageReceivedSubject.OnCompleted();
-                        _closeMessageReceivedSubject.OnCompleted();
-                        _exceptionSubject.OnCompleted();
-                    }
-                    finally
+                    if (!IsClosed)
                     {
                         try
                         {
-                            if (!_cancellationSocketJobs.IsCancellationRequested)
-                            {
-                                _cancellationSocketJobs.Cancel();
-                            }
+                            _socket?.Abort();
                         }
                         catch
                         {
@@ -257,12 +240,38 @@ namespace RxWebSocket
 
                     try
                     {
+                        foreach (var item in _backgroundExceptionQueue)
+                        {
+                            _exceptionSubject.OnNext(item);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger?.Error(e, FormatLogMessage($"An exception occurred in ExceptionHappenedInBackground.OnNext() : {e.Message}"));
+                    }
+
+                    _cancellationSocketJobs.CancelWithoutException();
+
+                    try
+                    {
                         _onDisposeSubject.OnNext(Unit.Default);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger?.Error(e, FormatLogMessage($"An exception occurred in OnDispose.OnNext() : {e.Message}"));
+                    }
+
+                    try
+                    {
+                        _exceptionSubject.OnCompleted();
+                        _binaryMessageReceivedSubject.OnCompleted();
+                        _textMessageReceivedSubject.OnCompleted();
+                        _closeMessageReceivedSubject.OnCompleted();
                         _onDisposeSubject.OnCompleted();
                     }
                     catch (Exception e)
                     {
-                        _logger?.Error(e, FormatLogMessage($"An exception occurred in OnDispose.OnNext() or OnCompleted() : {e.Message}"));
+                        _logger?.Error(e, FormatLogMessage($"An exception occurred in OnCompleted() : {e.Message}"));
                     }
                 }
             }
@@ -293,7 +302,7 @@ namespace RxWebSocket
                     _socket.State == WebSocketState.Aborted ||
                     _socket.State == WebSocketState.None)
                 {
-                    _logger?.Warn(FormatLogMessage($"Called CloseAsync, but websocket state is {(_socket == null ? "null" : _socket.State.ToString())}. It is not correct."));
+                    _logger?.Warn(FormatLogMessage($"Called CloseAsync, but websocket state is {(_socket == null ? "null" : _socket.State.ToStringFast())}. It is not correct."));
                     return;
                 }
 
@@ -306,7 +315,7 @@ namespace RxWebSocket
                         .ConfigureAwait(false);
                     IsListening = false;
 
-                    _cancellationSocketJobs.Cancel();
+                    _cancellationSocketJobs.CancelWithoutException();
                 }
                 catch (Exception e)
                 {
@@ -375,14 +384,9 @@ namespace RxWebSocket
                             _logger?.Error(e,
                                 FormatLogMessage(
                                     $"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
-                            if (!IsDisposed)
-                            {
-                                using (this)
-                                {
-                                    _exceptionSubject.OnNext(
-                                        new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
-                                }
-                            }
+
+                            _backgroundExceptionQueue.Enqueue(new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
+                            Dispose();
                         }
 
                         return;
@@ -405,13 +409,8 @@ namespace RxWebSocket
             catch (Exception e)
             {
                 _logger?.Error(e, FormatLogMessage($"Error while listening to websocket stream, error: '{e.Message}'"));
-                if (!IsDisposed)
-                {
-                    using (this)
-                    {
-                        _exceptionSubject.OnNext(new WebSocketBackgroundException(e, ExceptionType.Listen));
-                    }
-                }
+                _backgroundExceptionQueue.Enqueue(new WebSocketBackgroundException(e, ExceptionType.Listen));
+                Dispose();
             }
         }
 

@@ -24,5 +24,21 @@ namespace RxWebSocket.Utils
                     throw new ArgumentOutOfRangeException(nameof(webSocketCloseStatus), webSocketCloseStatus, null);
             }
         }
+
+        public static string ToStringFast(this WebSocketState webSocketState)
+        {
+            switch (webSocketState)
+            {
+                case WebSocketState.Aborted: return "Aborted";
+                case WebSocketState.Closed: return "Closed";
+                case WebSocketState.CloseReceived: return "CloseReceived";
+                case WebSocketState.CloseSent: return "CloseSent";
+                case WebSocketState.Connecting: return "Connecting";
+                case WebSocketState.None: return "None";
+                case WebSocketState.Open: return "Open";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(webSocketState), webSocketState, null);
+            }
+        }
     }
 }

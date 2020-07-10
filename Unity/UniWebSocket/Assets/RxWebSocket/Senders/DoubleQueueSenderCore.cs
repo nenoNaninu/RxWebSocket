@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Logging;
 using RxWebSocket.Threading;
+using RxWebSocket.Utils;
 using RxWebSocket.Validations;
 
 #if NETSTANDARD2_1 || NETSTANDARD2_0
@@ -76,20 +77,18 @@ namespace RxWebSocket.Senders
         {
             using (await _sendLocker.LockAsync().ConfigureAwait(false))
             {
-                if (Interlocked.Increment(ref _isStopRequested) == 1)
-                {
-                    try
-                    {
-                        _stopCancellationTokenSource.Cancel();
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                StopCore();
+            }
+        }
 
-                    _binaryMessageQueueWriter.Complete();
-                    _textMessageQueueWriter.Complete();
-                }
+        private void StopCore()
+        {
+            if (Interlocked.Increment(ref _isStopRequested) == 1)
+            {
+                _stopCancellationTokenSource.CancelWithoutException();
+
+                _binaryMessageQueueWriter.TryComplete();
+                _textMessageQueueWriter.TryComplete();
             }
         }
 
@@ -379,20 +378,7 @@ namespace RxWebSocket.Senders
                 using (_stopCancellationTokenSource)
                 using (_exceptionSubject)
                 {
-                    if (Interlocked.Increment(ref _isStopRequested) == 1)
-                    {
-                        try
-                        {
-                            _stopCancellationTokenSource.Cancel();
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-
-                        _binaryMessageQueueWriter.Complete();
-                        _textMessageQueueWriter.Complete();
-                    }
+                    StopCore();
                 }
             }
         }
