@@ -44,7 +44,7 @@ namespace WebSocketChat
             _webSocketHandler.OnConnected(socketWithName);
 
             //If you do not wait here, the connection will be disconnected.
-            await rxSocket.WaitUntilClose;
+            await rxSocket.WaitUntilCloseAsync();
         }
     }
 }
