@@ -28,23 +28,17 @@ namespace RxWebSocket.Sample
             _logger = logger;
         }
 
-        public async Task Connect(string name, string uri)
+        private void BuildStream(CompositeDisposable disposables)
         {
-            _close = false;
-            var channel = Channel.CreateBounded<SentMessage>(new BoundedChannelOptions(5) { SingleReader = true, SingleWriter = false });
-            _webSocketClient = new WebSocketClient(new Uri(uri), logger: _logger, sender: new SingleQueueSender(), name: name);
-
-            _disposables = new CompositeDisposable();
-
             _webSocketClient.BinaryMessageReceived
                 .Select(bin => JsonSerializer.Deserialize<ChatMessage>(bin))
                 .Subscribe(x => _receivedSubject.OnNext(x))
-                .AddTo(_disposables);
+                .AddTo(disposables);
 
             _webSocketClient.CloseMessageReceived
                 .Do(x => _logger?.Log($"CloseMessageReceived.Do()...{x}"))
                 .Subscribe(x => _closeSubject.OnNext(x))
-                .AddTo(_disposables);
+                .AddTo(disposables);
 
             _webSocketClient.ExceptionHappenedInBackground
                 .Subscribe(x =>
@@ -53,7 +47,18 @@ namespace RxWebSocket.Sample
                     _logger?.Log(x.ExceptionType.ToString());
                     _logger?.Log(x.Exception.ToString());
                 })
-                .AddTo(_disposables);
+                .AddTo(disposables);
+        }
+
+        public async Task Connect(string name, string uri)
+        {
+            _close = false;
+            //var channel = Channel.CreateBounded<SentMessage>(new BoundedChannelOptions(5) { SingleReader = true, SingleWriter = false });
+            _webSocketClient = new WebSocketClient(new Uri(uri), logger: _logger, sender: new SingleQueueSender(), name: name);
+
+            _disposables = new CompositeDisposable();
+
+            BuildStream(_disposables);
 
             await _webSocketClient.ConnectAsync();
             _webSocketClient.Send(Encoding.UTF8.GetBytes(name));

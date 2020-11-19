@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using RxWebSocket.Exceptions;
 using RxWebSocket.Message;
 
-#if NETSTANDARD2_1 || NETSTANDARD2_0
+#if NETSTANDARD2_1 || NETSTANDARD2_0|| NETCOREAPP
 using System.Reactive;
 #else
 using UniRx;

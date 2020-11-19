@@ -12,7 +12,7 @@ using RxWebSocket.Threading;
 using RxWebSocket.Utils;
 using RxWebSocket.Validations;
 
-#if NETSTANDARD2_1 || NETSTANDARD2_0
+#if NETSTANDARD2_1 || NETSTANDARD2_0|| NETCOREAPP
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
 #else

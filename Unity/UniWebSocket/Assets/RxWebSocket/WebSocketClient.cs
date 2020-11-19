@@ -12,7 +12,7 @@ using RxWebSocket.Message;
 using RxWebSocket.Senders;
 using RxWebSocket.Utils;
 
-#if NETSTANDARD2_1 || NETSTANDARD2_0
+#if NETSTANDARD2_1 || NETSTANDARD2_0 || NETCOREAPP
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
@@ -332,6 +332,47 @@ namespace RxWebSocket
             }
         }
 
+        private async ValueTask<bool> PublishMessage(WebSocketReceiveResult result)
+        {
+            if (result.MessageType == WebSocketMessageType.Text)
+            {
+                var receivedText = _memoryPool.ToArray();
+                _logger?.Log(FormatLogMessage($"Received: Type Text, binary length: {receivedText.Length}"));
+                _textMessageReceivedSubject.OnNext(receivedText);
+            }
+            else if (result.MessageType == WebSocketMessageType.Binary)
+            {
+                var receivedData = _memoryPool.ToArray();
+                _logger?.Log(FormatLogMessage($"Received: Type Binary, binary length: {receivedData.Length}"));
+                _binaryMessageReceivedSubject.OnNext(receivedData);
+            }
+            else if (result.MessageType == WebSocketMessageType.Close)
+            {
+                //close handshake
+                _logger?.Log(FormatLogMessage($"Received: Close Message, Status: {result.CloseStatus.ToStringFast()}, Description: {result.CloseStatusDescription}"));
+                _closeMessageReceivedSubject.OnNext(new CloseMessage(result.CloseStatus, result.CloseStatusDescription));
+                try
+                {
+                    await CloseAsync(WebSocketCloseStatus.NormalClosure,
+                        $"Response to the close message. Received close status: {result.CloseStatus.ToStringFast()}",
+                        true).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    _logger?.Error(e,
+                        FormatLogMessage(
+                            $"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
+
+                    _backgroundExceptionQueue.Enqueue(new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
+                    Dispose();
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
         private async Task Listen()
         {
             try
@@ -356,39 +397,8 @@ namespace RxWebSocket
 
                     LastReceivedTime = DateTime.UtcNow;
 
-                    if (result.MessageType == WebSocketMessageType.Text)
+                    if (await PublishMessage(result))
                     {
-                        var receivedText = _memoryPool.ToArray();
-                        _logger?.Log(FormatLogMessage($"Received: Type Text, binary length: {receivedText.Length}"));
-                        _textMessageReceivedSubject.OnNext(receivedText);
-                    }
-                    else if (result.MessageType == WebSocketMessageType.Binary)
-                    {
-                        var receivedData = _memoryPool.ToArray();
-                        _logger?.Log(FormatLogMessage($"Received: Type Binary, binary length: {receivedData.Length}"));
-                        _binaryMessageReceivedSubject.OnNext(receivedData);
-                    }
-                    else if (result.MessageType == WebSocketMessageType.Close)
-                    {
-                        //close handshake
-                        _logger?.Log(FormatLogMessage($"Received: Close Message, Status: {result.CloseStatus.ToStringFast()}, Description: {result.CloseStatusDescription}"));
-                        _closeMessageReceivedSubject.OnNext(new CloseMessage(result.CloseStatus, result.CloseStatusDescription));
-                        try
-                        {
-                            await CloseAsync(WebSocketCloseStatus.NormalClosure,
-                                $"Response to the close message. Received close status: {result.CloseStatus.ToStringFast()}",
-                                true).ConfigureAwait(false);
-                        }
-                        catch (Exception e)
-                        {
-                            _logger?.Error(e,
-                                FormatLogMessage(
-                                    $"Close message was received, so trying to close socket, but exception occurred. error: '{e.Message}'"));
-
-                            _backgroundExceptionQueue.Enqueue(new WebSocketBackgroundException(e, ExceptionType.CloseMessageReceive));
-                            Dispose();
-                        }
-
                         return;
                     }
                 }
